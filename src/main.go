@@ -93,11 +93,13 @@ func main() {
 
 	// set up other http handlers
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
+		fmt.Println("Someone visited the homepage")
 		w.Header().Set("content-type", "text/html")
-		fmt.Fprintf(w, `<b>welcome</b> to my relay!`)
+		fmt.Fprintf(w, `<h1>TollGate Nostr Relay</h1><b>Welcome</b> to the TollGate Nostr Relay!`)
 	})
 
 	// start the server
-	fmt.Println("running on :3334")
+	fmt.Println("Nostr Relay running on :3334")
 	http.ListenAndServe(":3334", relay)
 }
