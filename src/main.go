@@ -27,7 +27,6 @@ func main() {
 	relay.StoreEvent = append(relay.StoreEvent,
 		func(ctx context.Context, event *nostr.Event) error {
 			fmt.Println("got a event")
-			relay.BroadcastEvent(event)
 			store[event.ID] = event
 			return nil
 		},
