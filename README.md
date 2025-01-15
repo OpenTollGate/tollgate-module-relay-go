@@ -26,6 +26,8 @@ scp -O relay root@192.168.X.X:/tmp/relay # X.X == Router IP
 
 ## Required Firewall rules
 
+First, test if the relay is up by going to your router's ip on port `3334`. You should be greeted by a HTML page indicating that this is a Nostr relay.
+
 Add to `/etc/config/firewall`:
 ```uci
 config rule
@@ -59,6 +61,9 @@ config redirect
 ```
 
 Run `service firewall restart` to make changes go into effect.
+
+To test the firewall rule, go to `192.168.21.21:2121`. You should be greeted with the same HTML welcoming page of the Nostr relay.
+````
 
 ## OpenNDS rules
 **Prerequisite: OpenNDS is installed**
