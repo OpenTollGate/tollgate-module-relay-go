@@ -1,6 +1,6 @@
 module github.com/OpenTollgate/relay
 
-go 1.23.3
+go 1.23.1
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect

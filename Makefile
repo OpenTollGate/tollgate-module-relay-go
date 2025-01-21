@@ -1,40 +1,44 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=go-example
+PKG_NAME:=tollgate-module-relay-go
 PKG_VERSION:=0.0.1
 PKG_RELEASE:=1
 
-PKG_MAINTAINER:=Lukas Vögl <lukas@voegl.org>
+PKG_MAINTAINER:=Your Name <your@email.com>
 PKG_LICENSE:=CC0-1.0
 PKG_LICENSE_FILES:=LICENSE
 
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
-PKG_BUILD_FLAGS:=no-mips16
+PKG_USE_MIPS16:=0
 
-GO_PKG:=github.com/lvoegl/go-example
+GO_PKG:=github.com/OpenTollgate/relay
+GO_PKG_BUILD_PKG:=$(GO_PKG)
 
 include $(INCLUDE_DIR)/package.mk
-include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
+include ../../feeds/packages/lang/golang/golang-package.mk
 
-define Package/go-example
-	SECTION:=utils
-	CATEGORY:=Utilities
-	TITLE:=Go Example
-	DEPENDS:=$(GO_ARCH_DEPENDS)
+define Package/$(PKG_NAME)
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=TollGate Relay Module
+  DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
 
-define Package/go-example/description
-	An example package in Golang.
+define Package/$(PKG_NAME)/description
+  TollGate Relay Module for OpenWrt
 endef
 
 define Build/Prepare
-	$(CP) ./src/* $(PKG_BUILD_DIR)
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	cd $(PKG_BUILD_DIR) && go mod tidy
 endef
 
-define Package/go-example/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/go-example $(1)/usr/sbin
+define Package/$(PKG_NAME)/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/relay $(1)/usr/bin/tg-relay
 endef
 
-$(eval $(call BuildPackage,go-example))
+$(eval $(call GoBinPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,$(PKG_NAME)))
