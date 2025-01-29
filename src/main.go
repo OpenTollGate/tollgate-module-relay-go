@@ -13,6 +13,7 @@ import (
 func main() {
 	// create the relay instance
 	relay := khatru.NewRelay()
+	log.Println("successfully modified binary using SDK + imagebuilder")
 
 	// set up some basic properties (will be returned on the NIP-11 endpoint)
 	relay.Info.Name = "my relay"
