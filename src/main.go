@@ -101,6 +101,5 @@ func main() {
 	// start the server
 	fmt.Println("Nostr Relay running on :3334")
 	fmt.Println("successfully modified binary using SDK + imagebuilder")
-	log.Println("successfully modified binary using SDK + imagebuilder")
 	http.ListenAndServe(":3334", relay)
 }
