@@ -2,14 +2,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tollgate-module-relay-go
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_MAINTAINER:=Your Name <your@email.com>
-PKG_LICENSE:=CC0-1.0
+PKG_LICENSE:=CC0-2.2
 PKG_LICENSE_FILES:=LICENSE
 
 PKG_BUILD_DEPENDS:=golang/host
-PKG_BUILD_PARALLEL:=1
+PKG_BUILD_PARALLEL:=2
 PKG_USE_MIPS16:=0
 
 GO_PKG:=github.com/OpenTollgate/relay
