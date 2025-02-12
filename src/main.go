@@ -6,9 +6,15 @@ import (
 	"fmt"
 	"github.com/fiatjaf/khatru/policies"
 	"net/http"
-
 	"github.com/fiatjaf/khatru"
 	"github.com/nbd-wtf/go-nostr"
+	"runtime/debug"
+)
+
+var (
+	Version    string
+	CommitHash string
+	BuildTime  string
 )
 
 func getVersionInfo() string {
