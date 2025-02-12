@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"context"
 	"fmt"
 	"github.com/fiatjaf/khatru/policies"
@@ -11,6 +12,15 @@ import (
 )
 
 func main() {
+	// Add a version flag
+	versionFlag := flag.Bool("version", false, "Print version information")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(getVersionInfo())
+		return
+	}
+
 	// create the relay instance
 	relay := khatru.NewRelay()
 
