@@ -1,16 +1,47 @@
 package main
 
 import (
+	"flag"
 	"context"
 	"fmt"
 	"github.com/fiatjaf/khatru/policies"
 	"net/http"
-
 	"github.com/fiatjaf/khatru"
 	"github.com/nbd-wtf/go-nostr"
+	"runtime/debug"
 )
 
+var (
+	Version    string
+	CommitHash string
+	BuildTime  string
+)
+
+func getVersionInfo() string {
+    if info, ok := debug.ReadBuildInfo(); ok {
+        for _, setting := range info.Settings {
+            switch setting.Key {
+            case "vcs.revision":
+                CommitHash = setting.Value[:7]
+            case "vcs.time":
+                BuildTime = setting.Value
+            }
+        }
+    }
+    return fmt.Sprintf("Version: %s\nCommit: %s\nBuild Time: %s", 
+        Version, CommitHash, BuildTime)
+}
+
 func main() {
+	// Add a version flag
+	versionFlag := flag.Bool("version", false, "Print version information")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(getVersionInfo())
+		return
+	}
+
 	// create the relay instance
 	relay := khatru.NewRelay()
 
@@ -100,5 +131,6 @@ func main() {
 
 	// start the server
 	fmt.Println("Nostr Relay running on :3334")
+	fmt.Println("successfully modified binary using SDK + imagebuilder")
 	http.ListenAndServe(":3334", relay)
 }
