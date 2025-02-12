@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [ath79, glmt3000]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build for ATH79 (MIPS)
+        if: matrix.target == 'ath79'
+        run: |
+          cd ./src
+          env GOOS=linux GOARCH=mips GOMIPS=softfloat go build -o updater -trimpath -ldflags="-s -w"
+
+      - name: Build for GL-MT3000 (ARM)
+        if: matrix.target == 'glmt3000'
+        run: |
+          cd ./src
+          env GOOS=linux GOARCH=arm go build -o updater -trimpath -ldflags="-s -w"
