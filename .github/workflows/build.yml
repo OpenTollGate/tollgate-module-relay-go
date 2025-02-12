@@ -9,9 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [ath79, glmt3000]
+#    strategy:
+#      matrix:
+#        target: [ath79, glmt3000]
     steps:
       - uses: actions/checkout@v3
 
