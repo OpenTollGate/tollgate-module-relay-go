@@ -42,7 +42,7 @@ jobs:
 
       - name: Upload to Blossom
         id: upload
-        uses: c03rad0r/upload-blossom-action@main
+        uses: c03rad0r/upload-blossom-action@pr/nsec-as-argument
         with:
           host: ${{ secrets.HOST }}
           filePath: ./src/updater-${{ matrix.target }}
