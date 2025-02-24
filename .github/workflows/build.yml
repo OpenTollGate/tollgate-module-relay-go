@@ -42,7 +42,7 @@ jobs:
 
       - name: Upload to Blossom
         id: upload
-        uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
+        uses: c03rad0r/upload-blossom-action@using-nsec-argument-correct-state
         with:
           host: "https://blossom.swissdash.site"
           filePath: ./src/updater-${{ matrix.target }}
