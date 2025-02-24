@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Create OpenWRT package
-        uses: OpenTollGate/tollgate-sdk@to-reusable-action
+        uses: OpenTollGate/tollgate-sdk@main
         with:
           packageName: 'tollgate-module-relay-go'
           makeFilePath: 'Makefile'
