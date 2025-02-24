@@ -67,6 +67,7 @@ jobs:
           nostrPrivateKey: ${{ secrets.NSEC }}
 
       - name: Publish NIP-94 Metadata
+        id: publish
         uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
         with:
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
@@ -78,6 +79,31 @@ jobs:
           nsec: ${{ secrets.NSEC }}
           size: ${{ steps.upload.outputs.size }}
           # TODO: add architecture
+
+      - name: Verify NIP-94 Event
+        id: verify
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
+        continue-on-error: true
+        with:
+          eventId: ${{ steps.publish.outputs.eventId }}
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+
+      - name: Retry Verification
+        if: steps.verify.outcome == 'failure'
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
+        with:
+          eventId: ${{ steps.publish.outputs.eventId }}
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+
+      - name: Verification Summary
+        shell: bash
+        run: |
+          if [[ "${{ env.VERIFY }}" == "true" ]]; then
+            echo "✅ Raw binary successfully announced on relays"
+          else
+            echo "❌ Failed to announce raw binary on relays using NIP-94"
+            exit 1
+          fi
 
       - name: Create OpenWRT package
         uses: OpenTollGate/tollgate-sdk@main
