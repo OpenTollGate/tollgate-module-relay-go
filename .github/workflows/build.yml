@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       matrix:
         target: [ath79, glmt3000, glmt6000]
@@ -36,6 +39,27 @@ jobs:
         run: |
           cd ./src
           env GOOS=linux GOARCH=arm64 go build -o updater-glmt6000 -trimpath -ldflags="-s -w"
+
+      - name: Upload to Blossom
+        id: upload
+        uses: c03rad0r/upload-blossom-action@main
+        with:
+          host: ${{ secrets.HOST }}
+          filePath: ./src/updater-${{ matrix.target }}
+          nostrPrivateKey: ${{ secrets.NSEC }}
+
+      - name: Publish NIP-94 Metadata
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
+        with:
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+          url: ${{ steps.upload.outputs.blossomUrl }}
+          mimeType: application/octet-stream
+          fileHash: ${{ steps.upload.outputs.blossomHash }}
+          originalHash: ${{ steps.upload.outputs.blossomHash }}
+          content: "TollGate Module Relay binary for ${{ matrix.target }}"
+          nsec: ${{ secrets.NSEC }}
+          size: ${{ steps.upload.outputs.size }}
+          # TODO: add architecture
 
       - name: Create OpenWRT package
         uses: OpenTollGate/tollgate-sdk@main
