@@ -40,9 +40,27 @@ jobs:
           cd ./src
           env GOOS=linux GOARCH=arm64 go build -o updater-glmt6000 -trimpath -ldflags="-s -w"
 
+    - name: Check Required Secrets
+      run: |
+        missing_secrets=()
+    
+        if [ -z "${{ secrets.NSEC }}" ]; then
+          missing_secrets+=("NSEC")
+        fi
+    
+        # Add any other required secrets/variables here following the same pattern
+        if [ ${#missing_secrets[@]} -ne 0 ]; then
+          echo "::error::Missing required secrets: ${missing_secrets[*]}"
+          echo "Please set the following secrets in your repository settings:"
+          printf '%s\n' "${missing_secrets[@]}"
+          exit 1
+        else
+          echo "All required secrets are set"
+        fi
+
       - name: Upload to Blossom
         id: upload
-        uses: c03rad0r/upload-blossom-action@using-nsec-argument-correct-state
+        uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
         with:
           host: "https://blossom.swissdash.site"
           filePath: ./src/updater-${{ matrix.target }}
