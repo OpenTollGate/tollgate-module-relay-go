@@ -44,7 +44,7 @@ jobs:
         id: upload
         uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
         with:
-          host: https://blossom.swissdash.site
+          host: "https://blossom.swissdash.site"
           filePath: ./src/updater-${{ matrix.target }}
           nostrPrivateKey: ${{ secrets.NSEC }}
 
