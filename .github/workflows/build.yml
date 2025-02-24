@@ -32,7 +32,7 @@ jobs:
           env GOOS=linux GOARCH=arm go build -o updater-glmt3000 -trimpath -ldflags="-s -w"
 
       - name: Build for GL-MT6000 (ARM64)
-        if matrix.target == 'glmt6000'
+        if: matrix.target == 'glmt6000'
         run: |
           cd ./src
           env GOOS=linux GOARCH=arm64 go build -o updater-glmt6000 -trimpath -ldflags="-s -w"
