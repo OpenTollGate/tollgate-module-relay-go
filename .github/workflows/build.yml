@@ -6,7 +6,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-publish:
+  build-binary:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,7 +32,6 @@ jobs:
         with:
           go-version: '1.21'
 
-      # Part 1: Build and publish binaries
       - name: Build Binary
         run: |
           cd ./src
@@ -78,19 +77,23 @@ jobs:
           echo "❌ Failed to verify binary publication on relays"
           exit 1
 
-      # Part 2: Build and publish OpenWRT packages using the composite action
-      - name: Build OpenWRT Package
-        uses: OpenTollGate/tollgate-sdk/.github/workflows/build-firmware@main
-        with:
-          model: ${{ matrix.target.model }}
-          module: tollgate-module-relay-go
+  build-package:
+    needs: build-binary
+    uses: OpenTollGate/tollgate-sdk/.github/workflows/build-firmware@main
+    with:
+      model: ${{ matrix.target.model }}
+      module: tollgate-module-relay-go
 
+  publish-package:
+    needs: build-package
+    runs-on: ubuntu-latest
+    steps:
       - name: Upload Package to Blossom
         id: upload_package
         uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
         with:
           host: "https://blossom.swissdash.site"
-          filePath: ${{ env.IPK_PATH }}
+          filePath: ${{ needs.build-package.outputs.ipk_path }}
           nostrPrivateKey: ${{ secrets.NSEC }}
 
       - name: Publish Package NIP-94 Metadata
