@@ -79,15 +79,29 @@ jobs:
 
   build-package:
     needs: build-binary
-    uses: OpenTollGate/tollgate-sdk/.github/workflows/build-firmware.yml@main
-    with:
-      model: ${{ matrix.target.model }}
-      module: tollgate-module-relay-go
-
-  publish-package:
-    needs: build-package
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - name: ath79
+            goarch: mips
+            gomips: softfloat
+            model: gl-ar300m
+          - name: glmt3000
+            goarch: arm64
+            model: gl-mt3000
+          - name: glmt6000
+            goarch: arm64
+            model: gl-mt6000
     steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build OpenWRT Package
+        uses: OpenTollGate/tollgate-sdk@main
+        with:
+          packageName: 'tollgate-module-relay-go'
+          makeFilePath: './Makefile'
+
       - name: Upload Package to Blossom
         id: upload_package
         uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
