@@ -79,7 +79,7 @@ jobs:
 
   build-package:
     needs: build-binary
-    uses: OpenTollGate/tollgate-sdk/.github/workflows/build-firmware@main
+    uses: OpenTollGate/tollgate-sdk/.github/workflows/build-firmware.yml@main
     with:
       model: ${{ matrix.target.model }}
       module: tollgate-module-relay-go
@@ -130,4 +130,3 @@ jobs:
           echo "✅ Package successfully built and published"
           echo "Binary URL: ${{ steps.upload_binary.outputs.blossomUrl }}"
           echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
-
