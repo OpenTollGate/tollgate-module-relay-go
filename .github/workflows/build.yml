@@ -1,4 +1,4 @@
-name: Build
+name: Build and Publish
 
 on:
   push:
@@ -6,14 +6,24 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     strategy:
       matrix:
-        target: [ath79, glmt3000, glmt6000]
+        target:
+          - name: ath79
+            goarch: mips
+            gomips: softfloat
+            model: gl-ar300m
+          - name: glmt3000
+            goarch: arm64
+            model: gl-mt3000
+          - name: glmt6000
+            goarch: arm64
+            model: gl-mt6000
     steps:
       - uses: actions/checkout@v3
       
@@ -22,91 +32,145 @@ jobs:
         with:
           go-version: '1.21'
 
-      - name: Build for ATH79 (MIPS)
-        if: matrix.target == 'ath79'
+      # Part 1: Build and publish binaries
+      - name: Build Binary
         run: |
           cd ./src
-          env GOOS=linux GOARCH=mips GOMIPS=softfloat go build -o updater-ath79 -trimpath -ldflags="-s -w"
-
-      - name: Build for GL-MT3000 (ARM)
-        if: matrix.target == 'glmt3000'
-        run: |
-          cd ./src
-          env GOOS=linux GOARCH=arm go build -o updater-glmt3000 -trimpath -ldflags="-s -w"
-
-      - name: Build for GL-MT6000 (ARM64)
-        if: matrix.target == 'glmt6000'
-        run: |
-          cd ./src
-          env GOOS=linux GOARCH=arm64 go build -o updater-glmt6000 -trimpath -ldflags="-s -w"
-
-      - name: Check Required Secrets
-        run: |
-          missing_secrets=()
-
-          if [ -z "${{ secrets.NSEC }}" ]; then
-            missing_secrets+=("NSEC")
+          EXTRA_FLAGS=""
+          if [ "${{ matrix.target.gomips }}" != "" ]; then
+            EXTRA_FLAGS="GOMIPS=${{ matrix.target.gomips }}"
           fi
+          env GOOS=linux GOARCH=${{ matrix.target.goarch }} $EXTRA_FLAGS \
+            go build -o binary-${{ matrix.target.name }} -trimpath -ldflags="-s -w"
 
-          # Add any other required secrets/variables here following the same pattern
-          if [ ${#missing_secrets[@]} -ne 0 ]; then
-            echo "::error::Missing required secrets: ${missing_secrets[*]}"
-            echo "Please set the following secrets in your repository settings:"
-            printf '%s\n' "${missing_secrets[@]}"
-            exit 1
-          else
-            echo "All required secrets are set"
-          fi
-
-      - name: Upload to Blossom
-        id: upload
+      - name: Upload Binary to Blossom
+        id: upload_binary
         uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
         with:
           host: "https://blossom.swissdash.site"
-          filePath: ./src/updater-${{ matrix.target }}
+          filePath: ./src/binary-${{ matrix.target.name }}
           nostrPrivateKey: ${{ secrets.NSEC }}
 
-      - name: Publish NIP-94 Metadata
-        id: publish
+      - name: Publish Binary NIP-94 Metadata
+        id: publish_binary
         uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
         with:
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-          url: ${{ steps.upload.outputs.blossomUrl }}
+          url: ${{ steps.upload_binary.outputs.blossomUrl }}
           mimeType: application/octet-stream
-          fileHash: ${{ steps.upload.outputs.blossomHash }}
-          originalHash: ${{ steps.upload.outputs.blossomHash }}
-          content: "TollGate Module Relay binary for ${{ matrix.target }}"
+          fileHash: ${{ steps.upload_binary.outputs.blossomHash }}
+          originalHash: ${{ steps.upload_binary.outputs.blossomHash }}
+          content: "TollGate Module Relay binary for ${{ matrix.target.name }}"
           nsec: ${{ secrets.NSEC }}
-          size: ${{ steps.upload.outputs.size }}
-          # TODO: add architecture
+          size: ${{ steps.upload_binary.outputs.size }}
+          architecture: ${{ matrix.target.goarch }}
 
-      - name: Verify NIP-94 Event
-        id: verify
-        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
-        continue-on-error: true
-        with:
-          eventId: ${{ steps.publish.outputs.eventId }}
-          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-
-      - name: Retry Verification
-        if: steps.verify.outcome == 'failure'
+      - name: Verify Binary NIP-94 Event
+        id: verify_binary
         uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
         with:
-          eventId: ${{ steps.publish.outputs.eventId }}
+          eventId: ${{ steps.publish_binary.outputs.eventId }}
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
-      - name: Verification Summary
-        shell: bash
+      # Part 2: Build and publish OpenWRT packages
+      - name: Setup SDK Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install SDK Dependencies
         run: |
-          if [[ "${{ env.VERIFY }}" == "true" ]]; then
-            echo "✅ Raw binary successfully announced on relays"
-          else
-            echo "❌ Failed to announce raw binary on relays using NIP-94"
-            exit 1
-          fi
+          sudo apt-get update
+          sudo apt-get install -y jq git libncurses5-dev libncursesw5-dev pigz
+          pip3 install nostr setuptools
 
-      - name: Create OpenWRT package
-        uses: OpenTollGate/tollgate-sdk@main
+      - name: Download and Setup SDK
+        env:
+          MODEL: ${{ matrix.target.model }}
+        run: |
+          VERSION=23.05.3
+          case "$MODEL" in
+            "gl-ar300m")
+              PLATFORM="ath79"
+              SUBTARGET="generic"
+              ;;
+            "gl-mt3000"|"gl-mt6000")
+              PLATFORM="mediatek"
+              SUBTARGET="filogic"
+              ;;
+          esac
+          echo "PLATFORM=$PLATFORM" >> $GITHUB_ENV
+          echo "SUBTARGET=$SUBTARGET" >> $GITHUB_ENV
+          
+          SDKDIR=/tmp/openwrt-sdk
+          SDK_ARCHIVE="openwrt-sdk-${VERSION}-${PLATFORM}-${SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          DOWNLOAD_URL="https://downloads.openwrt.org/releases/${VERSION}/targets/${PLATFORM}/${SUBTARGET}/${SDK_ARCHIVE}"
+          SDK_PATH="${SDKDIR}/openwrt-sdk-${VERSION}-${PLATFORM}-${SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64"
+          echo "SDK_PATH=$SDK_PATH" >> $GITHUB_ENV
+          
+          mkdir -p "${SDKDIR}"
+          wget -O "${SDKDIR}/${SDK_ARCHIVE}" "${DOWNLOAD_URL}"
+          tar -I "xz -T0" -xf "${SDKDIR}/${SDK_ARCHIVE}" -C "${SDKDIR}"
+
+      - name: Build OpenWRT Package
+        env:
+          SDK_PATH: ${{ env.SDK_PATH }}
+          PLATFORM: ${{ env.PLATFORM }}
+          SUBTARGET: ${{ env.SUBTARGET }}
+        run: |
+          cd "${SDK_PATH}"
+          cp $GITHUB_WORKSPACE/feeds.conf ./feeds.conf
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          make defconfig
+          make package/feeds/custom/golang/compile V=sc
+          make package/feeds/custom/tollgate-module-relay-go/compile V=sc
+          
+          # Find the built package
+          IPK_PATH=$(find "${SDK_PATH}/bin/packages" -name "tollgate-module-relay-go*.ipk" | head -n 1)
+          echo "IPK_PATH=${IPK_PATH}" >> $GITHUB_ENV
+
+      - name: Upload Package to Blossom
+        id: upload_package
+        uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
         with:
-          packageName: 'tollgate-module-relay-go'
-          makeFilePath: 'Makefile'
+          host: "https://blossom.swissdash.site"
+          filePath: ${{ env.IPK_PATH }}
+          nostrPrivateKey: ${{ secrets.NSEC }}
+
+      - name: Publish Package NIP-94 Metadata
+        id: publish_package
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
+        with:
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+          url: ${{ steps.upload_package.outputs.blossomUrl }}
+          mimeType: application/x-opkg
+          fileHash: ${{ steps.upload_package.outputs.blossomHash }}
+          originalHash: ${{ steps.upload_package.outputs.blossomHash }}
+          content: "TollGate Module Relay OpenWRT package for ${{ matrix.target.model }}"
+          nsec: ${{ secrets.NSEC }}
+          size: ${{ steps.upload_package.outputs.size }}
+          architecture: ${{ env.PLATFORM }}
+
+      - name: Verify Package NIP-94 Event
+        id: verify_package
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
+        with:
+          eventId: ${{ steps.publish_package.outputs.eventId }}
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+
+      - name: Build Summary
+        run: |
+          echo "Binary Build and Publication:"
+          if [[ "${{ steps.verify_binary.outcome }}" == "success" ]]; then
+            echo "✅ Binary successfully built and announced"
+          else
+            echo "❌ Binary build or announcement failed"
+          fi
+          
+          echo "Package Build and Publication:"
+          if [[ "${{ steps.verify_package.outcome }}" == "success" ]]; then
+            echo "✅ Package successfully built and announced"
+          else
+            echo "❌ Package build or announcement failed"
+          fi
