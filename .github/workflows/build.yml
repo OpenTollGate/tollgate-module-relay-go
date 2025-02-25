@@ -78,67 +78,12 @@ jobs:
           echo "❌ Failed to verify binary publication on relays"
           exit 1
 
-      # Part 2: Build and publish OpenWRT packages
-      - name: Setup SDK Environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-
-      - name: Install SDK Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq git libncurses5-dev libncursesw5-dev pigz
-          pip3 install nostr setuptools
-
-      - name: Download and Setup SDK
-        env:
-          MODEL: ${{ matrix.target.model }}
-        run: |
-          VERSION=23.05.3
-          case "$MODEL" in
-            "gl-ar300m")
-              PLATFORM="ath79"
-              SUBTARGET="generic"
-              ;;
-            "gl-mt3000"|"gl-mt6000")
-              PLATFORM="mediatek"
-              SUBTARGET="filogic"
-              ;;
-          esac
-          echo "PLATFORM=$PLATFORM" >> $GITHUB_ENV
-          echo "SUBTARGET=$SUBTARGET" >> $GITHUB_ENV
-          
-          SDKDIR=/tmp/openwrt-sdk
-          SDK_ARCHIVE="openwrt-sdk-${VERSION}-${PLATFORM}-${SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-          DOWNLOAD_URL="https://downloads.openwrt.org/releases/${VERSION}/targets/${PLATFORM}/${SUBTARGET}/${SDK_ARCHIVE}"
-          SDK_PATH="${SDKDIR}/openwrt-sdk-${VERSION}-${PLATFORM}-${SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64"
-          echo "SDK_PATH=$SDK_PATH" >> $GITHUB_ENV
-          
-          mkdir -p "${SDKDIR}"
-          wget -O "${SDKDIR}/${SDK_ARCHIVE}" "${DOWNLOAD_URL}"
-          tar -I "xz -T0" -xf "${SDKDIR}/${SDK_ARCHIVE}" -C "${SDKDIR}"
-
+      # Part 2: Build and publish OpenWRT packages using the composite action
       - name: Build OpenWRT Package
-        env:
-          SDK_PATH: ${{ env.SDK_PATH }}
-          PLATFORM: ${{ env.PLATFORM }}
-          SUBTARGET: ${{ env.SUBTARGET }}
-        run: |
-          cd "${SDK_PATH}"
-          cp $GITHUB_WORKSPACE/feeds.conf ./feeds.conf
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-          make defconfig
-          make package/feeds/custom/golang/compile V=sc
-          make package/feeds/custom/tollgate-module-relay-go/compile V=sc
-          
-          # Find the built package
-          IPK_PATH=$(find "${SDK_PATH}/bin/packages" -name "tollgate-module-relay-go*.ipk" | head -n 1)
-          if [ -z "$IPK_PATH" ]; then
-            echo "❌ Failed to find built package"
-            exit 1
-          fi
-          echo "IPK_PATH=${IPK_PATH}" >> $GITHUB_ENV
+        uses: OpenTollGate/tollgate-sdk/.github/workflows/build-firmware@main
+        with:
+          model: ${{ matrix.target.model }}
+          module: tollgate-module-relay-go
 
       - name: Upload Package to Blossom
         id: upload_package
