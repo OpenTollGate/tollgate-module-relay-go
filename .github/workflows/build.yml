@@ -72,6 +72,12 @@ jobs:
           eventId: ${{ steps.publish_binary.outputs.eventId }}
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
+      - name: Check Binary Publication
+        if: steps.verify_binary.outcome != 'success'
+        run: |
+          echo "❌ Failed to verify binary publication on relays"
+          exit 1
+
       # Part 2: Build and publish OpenWRT packages
       - name: Setup SDK Environment
         uses: actions/setup-python@v4
@@ -128,6 +134,10 @@ jobs:
           
           # Find the built package
           IPK_PATH=$(find "${SDK_PATH}/bin/packages" -name "tollgate-module-relay-go*.ipk" | head -n 1)
+          if [ -z "$IPK_PATH" ]; then
+            echo "❌ Failed to find built package"
+            exit 1
+          fi
           echo "IPK_PATH=${IPK_PATH}" >> $GITHUB_ENV
 
       - name: Upload Package to Blossom
@@ -159,18 +169,16 @@ jobs:
           eventId: ${{ steps.publish_package.outputs.eventId }}
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
+      - name: Check Package Publication
+        if: steps.verify_package.outcome != 'success'
+        run: |
+          echo "❌ Failed to verify package publication on relays"
+          exit 1
+
       - name: Build Summary
         run: |
-          echo "Binary Build and Publication:"
-          if [[ "${{ steps.verify_binary.outcome }}" == "success" ]]; then
-            echo "✅ Binary successfully built and announced"
-          else
-            echo "❌ Binary build or announcement failed"
-          fi
-          
-          echo "Package Build and Publication:"
-          if [[ "${{ steps.verify_package.outcome }}" == "success" ]]; then
-            echo "✅ Package successfully built and announced"
-          else
-            echo "❌ Package build or announcement failed"
-          fi
+          echo "Build Summary for ${{ matrix.target.name }}:"
+          echo "✅ Binary successfully built and published"
+          echo "✅ Package successfully built and published"
+          echo "Binary URL: ${{ steps.upload_binary.outputs.blossomUrl }}"
+          echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
