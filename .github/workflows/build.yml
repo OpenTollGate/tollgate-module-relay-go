@@ -144,3 +144,78 @@ jobs:
           echo "✅ Package successfully built and published"
           echo "Binary URL: ${{ steps.upload_binary.outputs.blossomUrl }}"
           echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
+
+  build-firmware:
+    needs: build-package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - name: ath79
+            model: gl-ar300m
+          - name: glmt3000
+            model: gl-mt3000
+          - name: glmt6000
+            model: gl-mt6000
+      fail-fast: false
+
+    name: Build Firmware ${{ matrix.target.model }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Checkout Image Builder
+        uses: actions/checkout@v4
+        with:
+          repository: OpenTollGate/tollgate-image-builder
+          path: tollgate-image-builder
+      
+      - name: Build OpenWRT Image
+        id: build-openwrt-image
+        uses: ./tollgate-image-builder
+        with:
+          model: ${{ matrix.target.model }}
+          nostr_secret_key: ${{ secrets.NSEC }}
+          nostr_public_key: ${{ secrets.NPUB }}
+      
+      - name: Upload Firmware to Blossom
+        id: upload_firmware
+        uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
+        with:
+          host: "https://blossom.swissdash.site"
+          filePath: ${{ steps.build-openwrt-image.outputs.firmware_path }}
+          nostrPrivateKey: ${{ secrets.NSEC }}
+
+      - name: Publish Firmware NIP-94 Metadata
+        id: publish_firmware
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
+        with:
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+          url: ${{ steps.upload_firmware.outputs.blossomUrl }}
+          mimeType: application/octet-stream
+          fileHash: ${{ steps.upload_firmware.outputs.blossomHash }}
+          originalHash: ${{ steps.upload_firmware.outputs.blossomHash }}
+          content: "TollGate OpenWRT Firmware for ${{ matrix.target.model }}"
+          nsec: ${{ secrets.NSEC }}
+          size: ${{ steps.upload_firmware.outputs.size }}
+          architecture: ${{ matrix.target.name }}
+
+      - name: Verify Firmware NIP-94 Event
+        id: verify_firmware
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
+        with:
+          eventId: ${{ steps.publish_firmware.outputs.eventId }}
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+
+      - name: Check Firmware Publication
+        if: steps.verify_firmware.outcome != 'success'
+        run: |
+          echo "❌ Failed to verify firmware publication on relays"
+          exit 1
+
+      - name: Upload Firmware Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.target.model }}
+          path: ${{ steps.build-openwrt-image.outputs.firmware_path }}
+          retention-days: 5
