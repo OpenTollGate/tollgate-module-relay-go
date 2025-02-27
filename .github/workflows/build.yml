@@ -174,9 +174,10 @@ jobs:
       - name: Checkout Image Builder
         uses: actions/checkout@v4
         with:
-          repository: OpenTollGate/tollgate-os@main
+          repository: OpenTollGate/tollgate-os
+          ref: main
           path: tollgate-os
-      
+
       - name: Build OpenWRT Image
         id: build-openwrt-image
         uses: ./tollgate-os
