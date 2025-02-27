@@ -174,7 +174,7 @@ jobs:
       - name: Checkout Image Builder
         uses: actions/checkout@v4
         with:
-          repository: OpenTollGate/tollgate-image-builder@fix-files-not-found
+          repository: OpenTollGate/tollgate-image-builder@main
           path: tollgate-image-builder
       
       - name: Build OpenWRT Image
