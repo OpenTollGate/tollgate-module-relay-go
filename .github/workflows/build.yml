@@ -174,7 +174,7 @@ jobs:
       - name: Checkout Image Builder
         uses: actions/checkout@v4
         with:
-          repository: OpenTollGate/tollgate-image-builder
+          repository: OpenTollGate/tollgate-image-builder@fix-files-not-found
           path: tollgate-image-builder
       
       - name: Build OpenWRT Image
@@ -184,6 +184,7 @@ jobs:
           model: ${{ matrix.target.model }}
           nostr_secret_key: ${{ secrets.NSEC }}
           nostr_public_key: ${{ secrets.NPUB }}
+          files_path: "./tollgate-image-builder/files"
       
       - name: Upload Firmware to Blossom
         id: upload_firmware
