@@ -97,17 +97,24 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Build OpenWRT Package
+        id: build_package
         uses: OpenTollGate/tollgate-sdk@main
         with:
           packageName: 'tollgate-module-relay-go'
           makeFilePath: './Makefile'
+          model: ${{ matrix.target.model }}
+
+      - name: Debug output
+        run: |
+          echo "Attempting to list built package:"
+          ls -R /tmp/openwrt-sdk/openwrt-sdk-*/bin/packages
 
       - name: Upload Package to Blossom
         id: upload_package
         uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
         with:
           host: "https://blossom.swissdash.site"
-          filePath: ${{ needs.build-package.outputs.ipk_path }}
+          filePath: ${{ steps.build_package.outputs.package_path }}
           nostrPrivateKey: ${{ secrets.NSEC }}
 
       - name: Publish Package NIP-94 Metadata
