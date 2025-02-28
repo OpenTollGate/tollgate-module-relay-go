@@ -1,8 +1,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tollgate-module-relay-go
-PKG_VERSION:=0.0.1
+PKG_VERSION:=$(shell git rev-list --count HEAD 2>/dev/null || echo "0.0.1").$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 PKG_RELEASE:=1
+
+# Place conditional checks EARLY - before variables that depend on them
+ifneq ($(TOPDIR),)
+	# Feed-specific settings (auto-clone from git)
+	PKG_SOURCE_PROTO:=git
+	PKG_SOURCE_URL:=https://github.com/OpenTollGate/tollgate-module-relay-go.git
+	PKG_SOURCE_VERSION:=main
+	PKG_MIRROR_HASH:=skip
+else
+	# SDK build context (local files)
+	PKG_BUILD_DIR:=$(CURDIR)
+endif
 
 PKG_MAINTAINER:=Your Name <your@email.com>
 PKG_LICENSE:=CC0-1.0
@@ -19,14 +31,14 @@ include $(INCLUDE_DIR)/package.mk
 include ../../feeds/packages/lang/golang/golang-package.mk
 
 define Package/$(PKG_NAME)
-  SECTION:=net
-  CATEGORY:=Network
-  TITLE:=TollGate Relay Module
-  DEPENDS:=$(GO_ARCH_DEPENDS)
+	SECTION:=net
+	CATEGORY:=Network
+	TITLE:=TollGate Relay Module
+	DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
 
 define Package/$(PKG_NAME)/description
-  TollGate Relay Module for OpenWrt
+	TollGate Relay Module for OpenWrt
 endef
 
 define Build/Prepare
