@@ -76,6 +76,13 @@ jobs:
         run: |
           echo "❌ Failed to verify binary publication on relays"
           exit 1
+          
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target.name }}
+          path: ./src/binary-${{ matrix.target.name }}
+          retention-days: 5
 
   build-package:
     needs: build-binary
@@ -143,6 +150,13 @@ jobs:
         run: |
           echo "❌ Failed to verify package publication on relays"
           exit 1
+
+      - name: Upload Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.target.model }}
+          path: ${{ steps.build_package.outputs.package_path }}
+          retention-days: 5
 
       - name: Build Summary
         run: |
