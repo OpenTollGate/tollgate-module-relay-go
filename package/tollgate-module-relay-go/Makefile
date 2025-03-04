@@ -28,7 +28,7 @@ GO_PKG:=https://github.com/OpenTollGate/tollgate-module-relay-go.git
 GO_PKG_BUILD_PKG:=$(GO_PKG)
 
 include $(INCLUDE_DIR)/package.mk
-include ../../feeds/packages/lang/golang/golang-package.mk
+include $(TOPDIR)/package/lang/golang-package.mk
 
 define Package/$(PKG_NAME)
 	SECTION:=net
