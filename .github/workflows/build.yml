@@ -32,11 +32,11 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
-          cache-dependency-path: ./src/go.sum
+          cache-dependency-path: ./package/tollgate-module-relay-go/src/go.sum
 
       - name: Build Binary
         run: |
-          cd ./src
+          cd ./package/tollgate-module-relay-go/src
           EXTRA_FLAGS=""
           if [ "${{ matrix.target.gomips }}" != "" ]; then
             EXTRA_FLAGS="GOMIPS=${{ matrix.target.gomips }}"
@@ -49,7 +49,7 @@ jobs:
         uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
         with:
           host: "https://blossom.swissdash.site"
-          filePath: ./src/binary-${{ matrix.target.name }}
+          filePath: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
           nostrPrivateKey: ${{ secrets.NSEC }}
 
       - name: Publish Binary NIP-94 Metadata
@@ -83,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.target.name }}
-          path: ./src/binary-${{ matrix.target.name }}
+          path: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
           retention-days: 5
 
   build-package:
