@@ -105,7 +105,7 @@ jobs:
         uses: OpenTollGate/tollgate-sdk@main
         with:
           packageName: 'tollgate-module-relay-go'
-          makeFilePath: './Makefile'
+          makeFilePath: './package/tollgate-module-relay-go/Makefile'
           model: ${{ matrix.target.model }}
 
       - name: Debug output
