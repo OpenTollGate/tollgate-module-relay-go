@@ -63,14 +63,9 @@ endef
 
 define Build/Compile
 	cd $(PKG_BUILD_DIR) && \
-	CGO_ENABLED=1 \
-	CC=$(TARGET_CC) \
-	CXX=$(TARGET_CXX) \
+	CGO_ENABLED=0 \
 	GOOS=linux \
-	GOARCH=$(GO_TARGET_ARCH) \
-	GOARM=$(GO_ARM) \
-	GOMIPS=$(GO_MIPS) \
-	GO386=$(GO_386) \
+	GOARCH=arm64 \
 	go build -trimpath \
 		-ldflags "-s -w \
 		-X main.Version=$(PKG_VERSION) \
