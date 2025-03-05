@@ -49,16 +49,8 @@ define Build/Prepare
 	@echo "Contents of PKG_BUILD_DIR after default prepare:"
 	@ls -la $(PKG_BUILD_DIR) || echo "Directory empty or doesn't exist"
 
-	# Only copy local files if we're in a local build context
-	ifneq ($(TOPDIR),)
-		# We're in SDK context, source is fetched via git, don't copy local files
-		cd $(PKG_BUILD_DIR) && go mod tidy
-	else
-		# We're in local development context, copy local files
-		mkdir -p $(PKG_BUILD_DIR)
-		$(CP) ./src/* $(PKG_BUILD_DIR)/
-		cd $(PKG_BUILD_DIR) && go mod tidy
-	endif
+	# Clean up Go module cache if needed
+	cd $(PKG_BUILD_DIR) && go mod tidy
 endef
 
 define Package/$(PKG_NAME)/install
