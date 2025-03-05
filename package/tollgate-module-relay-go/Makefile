@@ -53,6 +53,12 @@ define Build/Prepare
 	cd $(PKG_BUILD_DIR) && go mod tidy
 endef
 
+define Build/Compile
+	cd $(PKG_BUILD_DIR); \
+	$(MAKE_VARS) \
+	$(GO_CMD) build -v -o $(PKG_BUILD_DIR)/tollgate-relay
+endef
+
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/tollgate-relay $(1)/usr/bin/tollgate-relay
