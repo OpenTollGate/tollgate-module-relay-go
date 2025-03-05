@@ -102,7 +102,7 @@ jobs:
 
       - name: Build OpenWRT Package
         id: build_package
-        uses: OpenTollGate/tollgate-sdk@single-makefile
+        uses: OpenTollGate/tollgate-sdk@main
         with:
           packageName: 'tollgate-module-relay-go'
           makeFilePath: './Makefile'
