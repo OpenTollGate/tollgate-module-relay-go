@@ -25,7 +25,6 @@ PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 
 GO_PKG:=github.com/OpenTollGate/tollgate-module-relay-go
-GO_PKG_BUILD_PKG:=$(GO_PKG)
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/package/lang/golang-package.mk
@@ -50,18 +49,39 @@ define Build/Prepare
 	@ls -la $(PKG_BUILD_DIR) || echo "Directory empty or doesn't exist"
 
 	# Clean up Go module cache if needed
-	cd $(PKG_BUILD_DIR) && go mod tidy
+	cd $(PKG_BUILD_DIR) && \
+	rm -f go.mod go.sum && \
+	go mod init tollgate-module-relay-go && \
+	go mod edit -replace github.com/OpenTollgate/relay=./ && \
+	go mod tidy && \
+	go get github.com/fiatjaf/khatru && \
+	go get github.com/nbd-wtf/go-nostr
+endef
+
+define Build/Configure
 endef
 
 define Build/Compile
-	cd $(PKG_BUILD_DIR); \
-	$(MAKE_VARS) \
-	$(GO_CMD) build -v -o $(PKG_BUILD_DIR)/tollgate-relay
+	cd $(PKG_BUILD_DIR) && \
+	CGO_ENABLED=1 \
+	CC=$(TARGET_CC) \
+	CXX=$(TARGET_CXX) \
+	GOOS=linux \
+	GOARCH=$(GO_TARGET_ARCH) \
+	GOARM=$(GO_ARM) \
+	GOMIPS=$(GO_MIPS) \
+	GO386=$(GO_386) \
+	go build -trimpath \
+		-ldflags "-s -w \
+		-X main.Version=$(PKG_VERSION) \
+		-X main.CommitHash=$(PKG_RELEASE) \
+		-X main.BuildTime=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')" \
+		-o $(PKG_BUILD_DIR)/tollgate-relay main.go
 endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/tollgate-relay $(1)/usr/bin/tollgate-relay
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tollgate-relay $(1)/usr/bin/tollgate-relay
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
