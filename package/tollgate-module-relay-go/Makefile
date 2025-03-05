@@ -24,7 +24,7 @@ PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 
-GO_PKG:=https://github.com/OpenTollGate/tollgate-module-relay-go.git
+GO_PKG:=github.com/OpenTollGate/tollgate-module-relay-go
 GO_PKG_BUILD_PKG:=$(GO_PKG)
 
 include $(INCLUDE_DIR)/package.mk
@@ -42,9 +42,23 @@ define Package/$(PKG_NAME)/description
 endef
 
 define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-	cd $(PKG_BUILD_DIR) && go mod tidy
+	# First call the default prepare to handle git source fetching
+	$(call Build/Prepare/Default)
+
+	# Debug: check what's in the build directory after default prepare
+	@echo "Contents of PKG_BUILD_DIR after default prepare:"
+	@ls -la $(PKG_BUILD_DIR) || echo "Directory empty or doesn't exist"
+
+	# Only copy local files if we're in a local build context
+	ifneq ($(TOPDIR),)
+		# We're in SDK context, source is fetched via git, don't copy local files
+		cd $(PKG_BUILD_DIR) && go mod tidy
+	else
+		# We're in local development context, copy local files
+		mkdir -p $(PKG_BUILD_DIR)
+		$(CP) ./src/* $(PKG_BUILD_DIR)/
+		cd $(PKG_BUILD_DIR) && go mod tidy
+	endif
 endef
 
 define Package/$(PKG_NAME)/install
