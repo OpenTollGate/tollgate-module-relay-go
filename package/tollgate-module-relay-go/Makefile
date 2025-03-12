@@ -63,10 +63,13 @@ endef
 
 define Build/Compile
 	cd $(PKG_BUILD_DIR) && \
+	GO111MODULE=on \
 	CGO_ENABLED=0 \
 	GOOS=linux \
 	GOARCH=arm64 \
-	go build -trimpath \
+	go mod tidy && \
+	go mod vendor && \
+	go build -mod=vendor -trimpath \
 		-ldflags "-s -w \
 		-X main.Version=$(PKG_VERSION) \
 		-X main.CommitHash=$(PKG_RELEASE) \
