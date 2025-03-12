@@ -3,8 +3,8 @@ module github.com/OpenTollgate/relay
 go 1.23.1
 
 require (
-	github.com/fiatjaf/khatru v0.17.2
-	github.com/nbd-wtf/go-nostr v0.51.2
+	github.com/fiatjaf/khatru v0.15.2
+	github.com/nbd-wtf/go-nostr v0.50.2
 )
 
 require (
@@ -13,8 +13,9 @@ require (
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
-	github.com/bytedance/sonic v1.12.10 // indirect
+	github.com/bytedance/sonic v1.8.0 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
+	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
