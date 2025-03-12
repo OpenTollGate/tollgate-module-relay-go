@@ -12,7 +12,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/fasthttp/websocket v1.5.7 // indirect
 	github.com/fiatjaf/eventstore v0.13.0 // indirect
-	github.com/fiatjaf/khatru v0.12.1 // indirect
+	github.com/fiatjaf/khatru v0.17.2 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
