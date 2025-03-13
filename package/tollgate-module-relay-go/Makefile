@@ -27,7 +27,8 @@ PKG_USE_MIPS16:=0
 GO_PKG:=github.com/OpenTollGate/tollgate-module-relay-go
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/golang-package.mk
+# include $(INCLUDE_DIR)/golang-package.mk
+$(eval $(call GoPackage))
 
 define Package/$(PKG_NAME)
 	SECTION:=net
