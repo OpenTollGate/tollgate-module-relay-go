@@ -5,10 +5,10 @@ go 1.23.1
 require (
 	github.com/fiatjaf/khatru v0.15.2
 	github.com/nbd-wtf/go-nostr v0.50.2
-        github.com/bytedance/sonic v1.9.1
+        github.com/bytedance/sonic v1.12.1
 )
 
-replace github.com/bytedance/sonic => github.com/bytedance/sonic v1.9.1 // force replace
+replace github.com/bytedance/sonic => github.com/bytedance/sonic v1.12.1 // force replace
 
 require (
 	github.com/ImVexed/fasturl v0.0.0-20230304231329-4e41488060f3 // indirect

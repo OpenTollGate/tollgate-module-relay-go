@@ -53,8 +53,8 @@ define Build/Prepare
 	rm -f go.mod go.sum && \
 	go mod init tollgate-module-relay-go && \
 	go mod edit -replace github.com/OpenTollgate/relay=./ && \
-	go mod edit -replace github.com/bytedance/sonic=github.com/bytedance/sonic@v1.9.1 && \
-	go mod edit -require github.com/bytedance/sonic@v1.9.1 && \
+	go mod edit -replace github.com/bytedance/sonic=github.com/bytedance/sonic@v1.12.10 && \
+	go mod edit -require github.com/bytedance/sonic@v1.12.10 && \
 	go mod tidy && \
 	go get github.com/fiatjaf/khatru && \
 	go get github.com/nbd-wtf/go-nostr && \
@@ -77,15 +77,23 @@ define Build/Compile
 	echo "Vendored dependencies:" && \
 	find vendor -type d -maxdepth 2 | grep bytedance || echo "No bytedance in vendor" && \
 	echo "Checking vendored sonic version:" && \
-	grep "github.com/bytedance/sonic v1.9.1" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
+	grep "github.com/bytedance/sonic v1.12.10" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
 	GODEBUG=netdns=go+1 \
-	go build -mod=vendor -trimpath \
+	go build -v -x -mod=vendor -trimpath \
 		-tags netgo,osusergo \
 		-ldflags "-s -w -extldflags '-static' \
 		-X main.Version=$(PKG_VERSION) \
 		-X main.CommitHash=$(PKG_RELEASE) \
 		-X main.BuildTime=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')" \
 		-o $(PKG_BUILD_DIR)/tollgate-relay main.go
+
+	@if [ ! -f "$(PKG_BUILD_DIR)/tollgate-relay" ]; then \
+		echo "\n!!! NO BINARY CREATED - BUILD FAILED !!!"; \
+		echo "Build artifacts:" ; \
+		ls -la $(PKG_BUILD_DIR) ; \
+		exit 1; \
+	fi
+
 endef
 
 define Package/$(PKG_NAME)/install
