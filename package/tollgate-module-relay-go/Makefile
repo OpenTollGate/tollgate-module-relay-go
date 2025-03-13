@@ -53,7 +53,6 @@ define Build/Prepare
 	rm -f go.mod go.sum && \
 	go mod init tollgate-module-relay-go && \
 	go mod edit -replace github.com/OpenTollgate/relay=./ && \
-
 	go mod edit -replace github.com/bytedance/sonic=github.com/bytedance/sonic@v1.9.1 && \
 	go mod edit -require github.com/bytedance/sonic@v1.9.1 && \
 	go mod tidy && \
@@ -75,15 +74,11 @@ define Build/Compile
 	GOWORK=off \
 	go mod tidy && \
 	go mod vendor && \
-	# Add debugging output for dependency list
 	echo "Vendored dependencies:" && \
 	find vendor -type d -maxdepth 2 | grep bytedance || echo "No bytedance in vendor" && \
-	# Verify vendor integrity
-	@echo "Checking vendored sonic version:"
-	grep '"github.com/bytedance/sonic v1.9.1"' vendor/modules.txt || (echo "Wrong sonic version!"; exit 1)
-
-	# Final build with redundant checks
-	GODEBUG=netdns=go+1 \  # Force Go DNS resolver
+	echo "Checking vendored sonic version:" && \
+	grep "github.com/bytedance/sonic v1.9.1" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
+	GODEBUG=netdns=go+1 \
 	go build -mod=vendor -trimpath \
 		-tags netgo,osusergo \
 		-ldflags "-s -w -extldflags '-static' \
