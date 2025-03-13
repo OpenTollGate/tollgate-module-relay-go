@@ -27,7 +27,7 @@ PKG_USE_MIPS16:=0
 GO_PKG:=github.com/OpenTollGate/tollgate-module-relay-go
 
 include $(INCLUDE_DIR)/package.mk
-include $(TOPDIR)/package/lang/golang-package.mk
+include $(INCLUDE_DIR)/golang-package.mk
 
 define Package/$(PKG_NAME)
 	SECTION:=net
@@ -65,8 +65,8 @@ define Build/Configure
 endef
 
 define Build/Compile
-        mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
-        ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
+	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
+	ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
 
 	cd $(PKG_BUILD_DIR) && \
 	GO111MODULE=on \
@@ -97,6 +97,9 @@ define Build/Compile
 		exit 1; \
 	fi
 
+	# Create symlink to binary in expected location for install phase
+	mkdir -p $(PKG_BUILD_DIR)/.go_work/build/bin
+	ln -sf $(PKG_BUILD_DIR)/tollgate-relay $(PKG_BUILD_DIR)/.go_work/build/bin/tollgate-relay
 endef
 
 define Package/$(PKG_NAME)/install
