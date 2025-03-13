@@ -53,9 +53,13 @@ define Build/Prepare
 	rm -f go.mod go.sum && \
 	go mod init tollgate-module-relay-go && \
 	go mod edit -replace github.com/OpenTollgate/relay=./ && \
+	# Pin the sonic package version explicitly
+	go mod edit -require github.com/bytedance/sonic@v1.9.1 && \
 	go mod tidy && \
 	go get github.com/fiatjaf/khatru && \
-	go get github.com/nbd-wtf/go-nostr
+	go get github.com/nbd-wtf/go-nostr && \
+	# Double-check the sonic dependency
+	go list -m github.com/bytedance/sonic
 endef
 
 define Build/Configure
@@ -67,10 +71,15 @@ define Build/Compile
 	CGO_ENABLED=0 \
 	GOOS=linux \
 	GOARCH=arm64 \
+	GOFLAGS="-mod=vendor" \
 	go mod tidy && \
 	go mod vendor && \
+	# Add debugging output for dependency list
+	echo "Vendored dependencies:" && \
+	find vendor -type d -maxdepth 2 | grep bytedance || echo "No bytedance in vendor" && \
 	go build -mod=vendor -trimpath \
-		-ldflags "-s -w \
+		-tags netgo,osusergo \
+		-ldflags "-s -w -extldflags '-static' \
 		-X main.Version=$(PKG_VERSION) \
 		-X main.CommitHash=$(PKG_RELEASE) \
 		-X main.BuildTime=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')" \
