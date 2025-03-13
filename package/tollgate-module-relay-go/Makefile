@@ -65,6 +65,9 @@ define Build/Configure
 endef
 
 define Build/Compile
+        mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
+        ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
+
 	cd $(PKG_BUILD_DIR) && \
 	GO111MODULE=on \
 	CGO_ENABLED=0 \
