@@ -27,7 +27,8 @@ PKG_USE_MIPS16:=0
 GO_PKG:=github.com/OpenTollGate/tollgate-module-relay-go
 
 include $(INCLUDE_DIR)/package.mk
-include $(TOPDIR)/package/lang/golang-package.mk
+# include $(INCLUDE_DIR)/golang-package.mk
+$(eval $(call GoPackage))
 
 define Package/$(PKG_NAME)
 	SECTION:=net
@@ -53,25 +54,53 @@ define Build/Prepare
 	rm -f go.mod go.sum && \
 	go mod init tollgate-module-relay-go && \
 	go mod edit -replace github.com/OpenTollgate/relay=./ && \
+	go mod edit -replace github.com/bytedance/sonic=github.com/bytedance/sonic@v1.12.10 && \
+	go mod edit -require github.com/bytedance/sonic@v1.12.10 && \
 	go mod tidy && \
 	go get github.com/fiatjaf/khatru && \
-	go get github.com/nbd-wtf/go-nostr
+	go get github.com/nbd-wtf/go-nostr && \
+	go list -m github.com/bytedance/sonic
 endef
 
 define Build/Configure
 endef
 
 define Build/Compile
+	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
+	ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
+
 	cd $(PKG_BUILD_DIR) && \
+	GO111MODULE=on \
 	CGO_ENABLED=0 \
 	GOOS=linux \
 	GOARCH=arm64 \
-	go build -trimpath \
-		-ldflags "-s -w \
+	GOFLAGS="-mod=readonly -modcacherw" \
+	GOWORK=off \
+	go mod tidy && \
+	go mod vendor && \
+	echo "Vendored dependencies:" && \
+	find vendor -type d -maxdepth 2 | grep bytedance || echo "No bytedance in vendor" && \
+	echo "Checking vendored sonic version:" && \
+	grep "github.com/bytedance/sonic v1.12.10" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
+	GODEBUG=netdns=go+1 \
+	go build -v -x -mod=vendor -trimpath \
+		-tags netgo,osusergo \
+		-ldflags "-s -w -extldflags '-static' \
 		-X main.Version=$(PKG_VERSION) \
 		-X main.CommitHash=$(PKG_RELEASE) \
 		-X main.BuildTime=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')" \
 		-o $(PKG_BUILD_DIR)/tollgate-relay main.go
+
+	@if [ ! -f "$(PKG_BUILD_DIR)/tollgate-relay" ]; then \
+		echo "\n!!! NO BINARY CREATED - BUILD FAILED !!!"; \
+		echo "Build artifacts:" ; \
+		ls -la $(PKG_BUILD_DIR) ; \
+		exit 1; \
+	fi
+
+	# Create symlink to binary in expected location for install phase
+	mkdir -p $(PKG_BUILD_DIR)/.go_work/build/bin
+	ln -sf $(PKG_BUILD_DIR)/tollgate-relay $(PKG_BUILD_DIR)/.go_work/build/bin/tollgate-relay
 endef
 
 define Package/$(PKG_NAME)/install
