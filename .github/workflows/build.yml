@@ -14,16 +14,16 @@ jobs:
     strategy:
       matrix:
         target:
-          #- name: ath79
-          #  goarch: mips
-          #  gomips: softfloat
-          #  model: gl-ar300m
+          - name: ath79
+            goarch: mips
+            gomips: softfloat
+            model: gl-ar300m
           - name: glmt3000
             goarch: arm64
             model: gl-mt3000
-          #- name: glmt6000
-          #  goarch: arm64
-          #  model: gl-mt6000
+          - name: glmt6000
+            goarch: arm64
+            model: gl-mt6000
     steps:
       - uses: actions/checkout@v3
 
