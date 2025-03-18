@@ -1,0 +1,150 @@
+name: Prebuild Golang
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'
+  push:
+    paths:
+      - 'package/lang/golang/**'
+      - '.github/workflows/prebuild-golang.yml'
+    branches:
+      - '**'
+      - '!update-release-json'
+
+jobs:
+  prebuild:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [
+          {model: "gl-ar300m", platform: "ath79", subtarget: "generic"},
+          {model: "gl-mt3000", platform: "mediatek", subtarget: "filogic"},
+          {model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
+        ]
+      fail-fast: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq git libncurses5-dev libncursesw5-dev pigz binutils-dev python3-pip
+          sudo apt-get install -y python3-dev debhelper dh-python
+          # Install setuptools via pip instead of distutils
+          python3 -m pip install --upgrade setuptools
+
+      - name: Debug directory structure
+        run: |
+          pwd
+          ls -la
+          echo "Contents of lang directory:"
+          ls -la lang/
+          echo "Contents of lang/golang directory:"
+          ls -la lang/golang/
+
+      - name: Download and extract SDK
+        env:
+          MODEL: ${{ matrix.target.model }}
+          PLATFORM: ${{ matrix.target.platform }}
+          SUBTARGET: ${{ matrix.target.subtarget }}
+        run: |
+          VERSION=23.05.3
+          SDKDIR=/tmp/openwrt-sdk
+          SDK_ARCHIVE="openwrt-sdk-${VERSION}-${PLATFORM}-${SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          DOWNLOAD_URL="https://downloads.openwrt.org/releases/${VERSION}/targets/${PLATFORM}/${SUBTARGET}/${SDK_ARCHIVE}"
+          SDK_PATH="${SDKDIR}/openwrt-sdk-${VERSION}-${PLATFORM}-${SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64"
+          # Make SDK_PATH available to other steps
+          echo "SDK_PATH=${SDK_PATH}" >> "$GITHUB_ENV"
+          
+          mkdir -p "${SDKDIR}"
+          echo "Downloading SDK..."
+          (cd "${SDKDIR}" && curl -O "${DOWNLOAD_URL}")
+          
+          echo "Extracting SDK..."
+          tar -I "xz -T0" -xf "${SDKDIR}/${SDK_ARCHIVE}" -C "${SDKDIR}"
+          
+          # Create necessary SDK directories
+          mkdir -p "${SDK_PATH}/include"
+          mkdir -p "${SDK_PATH}/bin/packages/$PLATFORM"
+
+      - name: Setup Golang Build Environment
+        run: |
+          REPO_ROOT=$PWD
+          
+          # Copy feeds.conf
+          cp feeds.conf "${{ env.SDK_PATH }}"/feeds.conf
+          cd "${{ env.SDK_PATH }}"
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+          # Create package framework
+          mkdir -p "${{ env.SDK_PATH }}/package/golang"
+          cp -r "${REPO_ROOT}/lang/golang" "${{ env.SDK_PATH }}/package/golang"
+          
+          # Set up feed structure
+          FEED_DIR="${{ env.SDK_PATH }}/feeds/packages/lang/golang"
+          mkdir -p "${FEED_DIR}"
+          cp "${REPO_ROOT}/lang/golang/golang-package.mk" "${FEED_DIR}/"
+          cp "${REPO_ROOT}/lang/golang/golang-values.mk" "${FEED_DIR}/"
+          
+          # Link to system includes
+          ln -sf "${FEED_DIR}/golang-package.mk" "${{ env.SDK_PATH }}/include/golang-package.mk"
+          ln -sf "${FEED_DIR}/golang-values.mk" "${{ env.SDK_PATH }}/include/golang-values.mk"
+          
+          # Copy golang.mk
+          cp "${REPO_ROOT}/golang.mk" "${{ env.SDK_PATH }}/include/golang.mk"
+
+      - name: Build Golang
+        env:
+          PLATFORM: ${{ matrix.target.platform }}
+          SUBTARGET: ${{ matrix.target.subtarget }}
+          # Explicitly set SDK_PATH from the environment
+          SDK_PATH: ${{ env.SDK_PATH }}
+        run: |
+          if [ -z "$SDK_PATH" ]; then
+            echo "Error: SDK_PATH is not set"
+            exit 1
+          fi
+          echo "Using SDK_PATH: $SDK_PATH"
+          cd "$SDK_PATH"
+          make defconfig
+          echo "CONFIG_PACKAGE_golang=y" >> .config
+          make package/golang/compile V=s
+          
+          # Find and verify the golang package
+          GOLANG_IPK=$(find "${SDK_PATH}/bin/packages" -name "golang*.ipk" | head -n 1)
+          if [ -z "$GOLANG_IPK" ]; then
+            echo "Failed to build golang package!"
+            exit 1
+          fi
+          
+          echo "Successfully built golang package: $GOLANG_IPK"
+          # Calculate hash for verification
+          GOLANG_HASH=$(sha256sum "$GOLANG_IPK" | cut -d' ' -f1)
+          echo "GOLANG_HASH=$GOLANG_HASH" >> $GITHUB_ENV
+          echo "GOLANG_IPK=$GOLANG_IPK" >> $GITHUB_ENV
+
+      - name: Upload Prebuilt Golang
+        uses: actions/upload-artifact@v4
+        with:
+          name: golang-${{ matrix.target.model }}-${{ matrix.target.platform }}-${{ matrix.target.subtarget }}
+          path: ${{ env.GOLANG_IPK }}
+          retention-days: 30
+
+      - name: Verify Upload
+        run: |
+          if [ -z "$GOLANG_IPK" ] || [ ! -f "$GOLANG_IPK" ]; then
+            echo "Error: Golang package not found at $GOLANG_IPK"
+            exit 1
+          fi
+          echo "Golang package hash: $GOLANG_HASH"
+          echo "Successfully built and uploaded golang package for ${{ matrix.target.model }}"
