@@ -127,7 +127,7 @@ jobs:
           model: ${{ matrix.target.model }}
           platform: ${{ matrix.target.platform }}
           subtarget: ${{ matrix.target.subtarget }}
-          module: tollgate-module-${{ matrix.target.name }}-go
+          module: tollgate-module-relay-go
           prebuilt_golang: ${{ steps.find_golang.outputs.golang_ipk }}
 
       - name: Debug output
