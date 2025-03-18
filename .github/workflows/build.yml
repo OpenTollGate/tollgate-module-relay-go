@@ -1,6 +1,10 @@
 name: Build and Publish
 
 on:
+  workflow_run:
+    workflows: ["Prebuild Golang"]
+    types:
+      - completed
   push:
   pull_request:
     branches: [ "main" ]
