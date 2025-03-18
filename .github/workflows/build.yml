@@ -1,10 +1,6 @@
 name: Build and Publish
 
 on:
-  workflow_run:
-    workflows: ["Prebuild Golang"]
-    types:
-      - completed
   push:
   pull_request:
     branches: [ "main" ]
@@ -131,7 +127,7 @@ jobs:
           model: ${{ matrix.target.model }}
           platform: ${{ matrix.target.platform }}
           subtarget: ${{ matrix.target.subtarget }}
-          module: tollgate-module-relay-go
+          module: tollgate-module-${{ matrix.target.name }}-go
           prebuilt_golang: ${{ steps.find_golang.outputs.golang_ipk }}
 
       - name: Debug output
