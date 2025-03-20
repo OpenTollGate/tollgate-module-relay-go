@@ -34,7 +34,8 @@ define Package/$(PKG_NAME)
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=TollGate Relay Module
-	DEPENDS:=$(GO_ARCH_DEPENDS) +uboot-envtools @(arm64||mipsel)
+	DEPENDS:=$(GO_ARCH_DEPENDS) +uboot-envtools
+	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
@@ -117,15 +118,31 @@ define Build/Compile
 	@echo "Verifying binary compatibility..."
 	@file $(PKG_BUILD_DIR)/tollgate-relay | grep -q "ELF.*$(GOARCH)" || \
 		(echo "Binary architecture mismatch!"; file $(PKG_BUILD_DIR)/tollgate-relay; exit 1)
+
+	# Build the IPK package manually
+	$(MAKE) -C $(PKG_BUILD_DIR) IPKG_BUILD=1 \
+		IPKG_ARCH="$(ARCH)" \
+		IPKG_RELEASE="$(PKG_RELEASE)" \
+		IPKG_VERSION="$(PKG_VERSION)" \
+		IPKG_DESCRIPTION="TollGate Relay Module" \
+		IPKG_MAINTAINER="Your Name <your@email.com>" \
+		IPKG_SECTION="net" \
+		IPKG_CATEGORY="Network" \
+		package/ipkg
 endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tollgate-relay $(1)/usr/bin/tollgate-relay
 	
-	# Add U-Boot env config for GL-MT3000
+	# Add U-Boot env config
 	$(INSTALL_DIR) $(1)/etc
 	echo "/dev/mtd1 0x0 0x1000 0x10000" > $(1)/etc/fw_env.config
+	
+	# Create empty directories to prevent warnings
+	$(INSTALL_DIR) $(1)/usr/lib/opkg
+	$(INSTALL_DIR) $(1)/CONTROL
+	touch $(1)/CONTROL/control
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
