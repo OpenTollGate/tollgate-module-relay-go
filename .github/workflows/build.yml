@@ -20,12 +20,10 @@ jobs:
           - name: gl-ar300m
             goarch: mips
             gomips: softfloat
-            model: gl-ar300m
             tags: musl,netgo,osusergo
             ldflags: "-s -w -extldflags '-static'"
           - name: gl-mt3000
             goarch: arm64
-            model: gl-mt3000
             tags: netgo,osusergo
             ldflags: "-s -w"
           - name: glmt6000
