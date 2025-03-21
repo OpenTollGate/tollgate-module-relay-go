@@ -45,8 +45,8 @@ jobs:
           env GOOS=linux GOARCH=${{ matrix.target.goarch }} \
             GOMIPS=${{ matrix.target.gomips }} CGO_ENABLED=0 \
             go build -o binary-${{ matrix.target.name }} -trimpath \
-            -ldflags="${{ matrix.target.ldflags }}" \
-            -tags="${{ matrix.target.tags }}"
+            -ldflags="${{ matrix.target.ldflags }}" #\
+            #-tags="${{ matrix.target.tags }}"
 
       - name: Upload Binary to Blossom
         id: upload_binary
