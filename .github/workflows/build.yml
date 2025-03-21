@@ -95,7 +95,8 @@ jobs:
     strategy:
       matrix:
         target: [
-          {name: "ath79", goarch: "mips", gomips: "softfloat", model: "gl-ar300m", platform: "ath79", subtarget: "generic"},
+          {name: "ath79-nor", goarch: "mips", gomips: "softfloat", model: "gl-ar300m16", platform: "ath79", subtarget: "generic"},
+          {name: "ath79-nand", goarch: "mips", gomips: "softfloat", model: "gl-ar300m-nor", platform: "ath79", subtarget: "generic"},
           {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic"},
           {name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
         ]
