@@ -68,7 +68,7 @@ endef
 
 define Build/Compile
 	# Detect target architecture
-	ifeq ($(ARCH),aarch64)
+	ifeq ($(ARCH),arm64)
 		GOARCH=arm64
 	else ifeq ($(ARCH),mipsel)
 		GOARCH=mipsle
