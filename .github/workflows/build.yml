@@ -44,9 +44,9 @@ jobs:
           if [ "${{ matrix.target.gomips }}" != "" ]; then
             EXTRA_FLAGS="GOMIPS=${{ matrix.target.gomips }}"
           fi
-          env GOOS=linux GOARCH=${{ matrix.target.goarch }} $EXTRA_FLAGS \
+          env GOOS=linux GOARCH=${{ matrix.target.goarch }} CGO_ENABLED=0 $EXTRA_FLAGS \
             go build -o binary-${{ matrix.target.name }} -trimpath \
-            -ldflags="-s -w -extldflags '-static' -linkmode external" \
+            -ldflags="-s -w" \
             -tags netgo,osusergo
 
       - name: Upload Binary to Blossom
