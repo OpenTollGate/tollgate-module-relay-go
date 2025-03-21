@@ -42,11 +42,12 @@ jobs:
       - name: Build Binary
         run: |
           cd ./package/tollgate-module-relay-go/src
-          env GOOS=linux GOARCH=${{ matrix.target.goarch }} \
-            GOMIPS=${{ matrix.target.gomips }} CGO_ENABLED=0 \
-            go build -o binary-${{ matrix.target.name }} -trimpath \
-            -ldflags="${{ matrix.target.ldflags }}" #\
-            #-tags="${{ matrix.target.tags }}"
+          # env GOOS=linux GOARCH=${{ matrix.target.goarch }} \
+          #   GOMIPS=${{ matrix.target.gomips }} CGO_ENABLED=0 \
+          #   go build -o binary-${{ matrix.target.name }} -trimpath \
+          #   -ldflags="${{ matrix.target.ldflags }}" #\
+          #   #-tags="${{ matrix.target.tags }}"
+          env GOOS=linux GOARCH=arm64 go build -o binary-${{ matrix.target.name }} -trimpath -ldflags="-s -w"
 
       - name: Upload Binary to Blossom
         id: upload_binary
