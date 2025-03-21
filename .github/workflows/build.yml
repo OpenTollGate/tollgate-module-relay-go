@@ -153,11 +153,11 @@ jobs:
 
   #     - name: Upload Package to Blossom
   #       id: upload_package
-  #       uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
+  #       uses: c03rad0r/cli-blossom-uploader-go@main
   #       with:
   #         host: "https://blossom.swissdash.site"
   #         filePath: ${{ env.PACKAGE_FULLPATH }}
-  #         nostrPrivateKey: ${{ secrets.NSEC }}
+  #         nostrPrivateKey: ${{ secrets.NSECBECH }}
 
   #     - name: Publish Package NIP-94 Metadata
   #       id: publish_package
