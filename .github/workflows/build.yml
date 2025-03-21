@@ -1,6 +1,12 @@
 name: Build and Publish
 
 on:
+  workflow_run:
+    workflows: ["Prebuild Golang"]
+    types:
+      - completed
+  repository_dispatch:
+    types: [module-build-completed]
   push:
   pull_request:
     branches: [ "main" ]
@@ -109,8 +115,8 @@ jobs:
     strategy:
       matrix:
         target: [
-          #{name: "ath79-nor", goarch: "mips", gomips: "softfloat", model: "gl-ar300m16", platform: "ath79", subtarget: "generic"},
-          #{name: "ath79-nand", goarch: "mips", gomips: "softfloat", model: "gl-ar300m-nor", platform: "ath79", subtarget: "generic"},
+          #{name: "ath79-nor", goarch: "mips", gomips: "softfloat", model: "gl-ar300m16", platform: "ath79", subtarget: "generic", profile: "glinet_gl-ar300m16"},
+          #{name: "ath79-nand", goarch: "mips", gomips: "softfloat", model: "gl-ar300m-nor", platform: "ath79", subtarget: "generic", profile: "glinet_gl-ar300m-nor"},
           {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic"},
           {name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
         ]
@@ -127,7 +133,9 @@ jobs:
           name: golang-${{ matrix.target.model }}-${{ matrix.target.platform }}-${{ matrix.target.subtarget }}
           path: prebuilt/
           repo: OpenTollGate/tollgate-sdk
-          
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          continue-on-error: true
+
       - name: Find Golang Package
         id: find_golang
         run: |
@@ -160,6 +168,7 @@ jobs:
 
       - name: Publish Package NIP-94 Metadata
         id: publish_package
+        if: steps.upload_package.outputs.success == 'true'
         uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
         with:
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
@@ -167,13 +176,18 @@ jobs:
           mimeType: application/x-opkg
           fileHash: ${{ steps.upload_package.outputs.blossomHash }}
           originalHash: ${{ steps.upload_package.outputs.blossomHash }}
+          filename: ${{ env.MODULE_NAME }}-${{ matrix.target.model }}-${{ env.ARCH }}.ipk
           content: "TollGate Module Relay OpenWRT package for ${{ matrix.target.model }}"
           nsec: ${{ secrets.NSEC }}
           size: ${{ steps.upload_package.outputs.size }}
           architecture: ${{ env.PLATFORM }}
+          model: ${{ matrix.target.model }}
+          module: ${{ env.MODULE_NAME }}
+          version: "0.0.1"
 
       - name: Verify Package NIP-94 Event
         id: verify_package
+        if: steps.publish_package.outputs.eventId != ''
         uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
         with:
           eventId: ${{ steps.publish_package.outputs.eventId }}
