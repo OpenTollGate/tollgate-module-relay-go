@@ -91,106 +91,106 @@ jobs:
           path: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
           retention-days: 5
 
-  build-package:
-    needs: build-binary
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [
-          #{name: "ath79-nor", goarch: "mips", gomips: "softfloat", model: "gl-ar300m16", platform: "ath79", subtarget: "generic"},
-          #{name: "ath79-nand", goarch: "mips", gomips: "softfloat", model: "gl-ar300m-nor", platform: "ath79", subtarget: "generic"},
-          {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic"},
-          {name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
-        ]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
+  # build-package:
+  #   needs: build-binary
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       target: [
+  #         #{name: "ath79-nor", goarch: "mips", gomips: "softfloat", model: "gl-ar300m16", platform: "ath79", subtarget: "generic"},
+  #         #{name: "ath79-nand", goarch: "mips", gomips: "softfloat", model: "gl-ar300m-nor", platform: "ath79", subtarget: "generic"},
+  #         {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic"},
+  #         {name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
+  #       ]
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      # Download prebuilt golang packages
-      - name: Download Prebuilt Golang
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          workflow: prebuild-golang.yml
-          workflow_conclusion: success
-          name: golang-${{ matrix.target.model }}-${{ matrix.target.platform }}-${{ matrix.target.subtarget }}
-          path: prebuilt/
-          repo: OpenTollGate/tollgate-sdk
+  #     # Download prebuilt golang packages
+  #     - name: Download Prebuilt Golang
+  #       uses: dawidd6/action-download-artifact@v2
+  #       with:
+  #         workflow: prebuild-golang.yml
+  #         workflow_conclusion: success
+  #         name: golang-${{ matrix.target.model }}-${{ matrix.target.platform }}-${{ matrix.target.subtarget }}
+  #         path: prebuilt/
+  #         repo: OpenTollGate/tollgate-sdk
           
-      - name: Find Golang Package
-        id: find_golang
-        run: |
-          GOLANG_IPK=$(find prebuilt -name "golang*.ipk" | head -n 1)
-          echo "Found golang package: $GOLANG_IPK"
-          echo "golang_ipk=$GOLANG_IPK" >> $GITHUB_OUTPUT
+  #     - name: Find Golang Package
+  #       id: find_golang
+  #       run: |
+  #         GOLANG_IPK=$(find prebuilt -name "golang*.ipk" | head -n 1)
+  #         echo "Found golang package: $GOLANG_IPK"
+  #         echo "golang_ipk=$GOLANG_IPK" >> $GITHUB_OUTPUT
 
-      - name: Build OpenWRT Package
-        id: build_package
-        uses: OpenTollGate/tollgate-sdk@main
-        with:
-          model: ${{ matrix.target.model }}
-          platform: ${{ matrix.target.platform }}
-          subtarget: ${{ matrix.target.subtarget }}
-          module: tollgate-module-relay-go
-          prebuilt_golang: ${{ steps.find_golang.outputs.golang_ipk }}
+  #     - name: Build OpenWRT Package
+  #       id: build_package
+  #       uses: OpenTollGate/tollgate-sdk@main
+  #       with:
+  #         model: ${{ matrix.target.model }}
+  #         platform: ${{ matrix.target.platform }}
+  #         subtarget: ${{ matrix.target.subtarget }}
+  #         module: tollgate-module-relay-go
+  #         prebuilt_golang: ${{ steps.find_golang.outputs.golang_ipk }}
 
-      - name: Debug output
-        run: |
-          echo "Attempting to list built package:"
-          ls -R /tmp/openwrt-sdk/openwrt-sdk-*/bin/packages
+  #     - name: Debug output
+  #       run: |
+  #         echo "Attempting to list built package:"
+  #         ls -R /tmp/openwrt-sdk/openwrt-sdk-*/bin/packages
 
-      - name: Upload Package to Blossom
-        id: upload_package
-        uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
-        with:
-          host: "https://blossom.swissdash.site"
-          filePath: ${{ env.PACKAGE_FULLPATH }}
-          nostrPrivateKey: ${{ secrets.NSEC }}
+  #     - name: Upload Package to Blossom
+  #       id: upload_package
+  #       uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
+  #       with:
+  #         host: "https://blossom.swissdash.site"
+  #         filePath: ${{ env.PACKAGE_FULLPATH }}
+  #         nostrPrivateKey: ${{ secrets.NSEC }}
 
-      - name: Publish Package NIP-94 Metadata
-        id: publish_package
-        uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
-        with:
-          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-          url: ${{ steps.upload_package.outputs.blossomUrl }}
-          mimeType: application/x-opkg
-          fileHash: ${{ steps.upload_package.outputs.blossomHash }}
-          originalHash: ${{ steps.upload_package.outputs.blossomHash }}
-          content: "TollGate Module Relay OpenWRT package for ${{ matrix.target.model }}"
-          nsec: ${{ secrets.NSEC }}
-          size: ${{ steps.upload_package.outputs.size }}
-          architecture: ${{ env.PLATFORM }}
+  #     - name: Publish Package NIP-94 Metadata
+  #       id: publish_package
+  #       uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
+  #       with:
+  #         relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+  #         url: ${{ steps.upload_package.outputs.blossomUrl }}
+  #         mimeType: application/x-opkg
+  #         fileHash: ${{ steps.upload_package.outputs.blossomHash }}
+  #         originalHash: ${{ steps.upload_package.outputs.blossomHash }}
+  #         content: "TollGate Module Relay OpenWRT package for ${{ matrix.target.model }}"
+  #         nsec: ${{ secrets.NSEC }}
+  #         size: ${{ steps.upload_package.outputs.size }}
+  #         architecture: ${{ env.PLATFORM }}
 
-      - name: Verify Package NIP-94 Event
-        id: verify_package
-        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
-        with:
-          eventId: ${{ steps.publish_package.outputs.eventId }}
-          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+  #     - name: Verify Package NIP-94 Event
+  #       id: verify_package
+  #       uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
+  #       with:
+  #         eventId: ${{ steps.publish_package.outputs.eventId }}
+  #         relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
-      - name: Check Package Publication
-        if: steps.verify_package.outcome != 'success'
-        run: |
-          echo "❌ Failed to verify package publication on relays"
-          exit 1
+  #     - name: Check Package Publication
+  #       if: steps.verify_package.outcome != 'success'
+  #       run: |
+  #         echo "❌ Failed to verify package publication on relays"
+  #         exit 1
 
-      - name: Upload Package Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-${{ matrix.target.model }}
-          path: ${{ env.PACKAGE_FULLPATH }}
-          retention-days: 5
+  #     - name: Upload Package Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: package-${{ matrix.target.model }}
+  #         path: ${{ env.PACKAGE_FULLPATH }}
+  #         retention-days: 5
 
-      - name: Build Summary
-        run: |
-          echo "Build Summary for ${{ matrix.target.name }}:"
-          echo "✅ Binary successfully built and published"
-          echo "✅ Package successfully built and published"
-          echo "Binary URL: ${{ steps.upload_binary.outputs.blossomUrl }}"
-          echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
+  #     - name: Build Summary
+  #       run: |
+  #         echo "Build Summary for ${{ matrix.target.name }}:"
+  #         echo "✅ Binary successfully built and published"
+  #         echo "✅ Package successfully built and published"
+  #         echo "Binary URL: ${{ steps.upload_binary.outputs.blossomUrl }}"
+  #         echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
 
-      - name: Trigger OS Workflow
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          repository: OpenTollGate/tollgate-os
-          event-type: update-release-json
+  #     - name: Trigger OS Workflow
+  #       uses: peter-evans/repository-dispatch@v2
+  #       with:
+  #         token: ${{ secrets.REPO_ACCESS_TOKEN }}
+  #         repository: OpenTollGate/tollgate-os
+  #         event-type: update-release-json
