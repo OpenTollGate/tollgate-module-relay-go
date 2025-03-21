@@ -17,11 +17,11 @@ jobs:
     strategy:
       matrix:
         target:
-          - name: gl-ar300m
-            goarch: mips
-            gomips: softfloat
-            tags: musl,netgo,osusergo
-            ldflags: "-s -w -extldflags '-static'"
+          # - name: gl-ar300m
+          #   goarch: mips
+          #   gomips: softfloat
+          #   tags: musl,netgo,osusergo
+          #   ldflags: "-s -w -extldflags '-static'"
           - name: gl-mt3000
             goarch: arm64
             tags: netgo,osusergo
