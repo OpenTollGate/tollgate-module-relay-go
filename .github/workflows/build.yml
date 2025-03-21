@@ -46,7 +46,7 @@ jobs:
           fi
           env GOOS=linux GOARCH=${{ matrix.target.goarch }} CGO_ENABLED=0 $EXTRA_FLAGS \
             go build -o binary-${{ matrix.target.name }} -trimpath \
-            -ldflags="-s -w" \
+            -ldflags="-s -w -extldflags '-static'" \
             -tags netgo,osusergo
 
       - name: Upload Binary to Blossom
