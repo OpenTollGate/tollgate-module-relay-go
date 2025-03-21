@@ -84,10 +84,14 @@ jobs:
           mimeType: application/octet-stream
           fileHash: ${{ steps.upload_binary.outputs.blossomHash }}
           originalHash: ${{ steps.upload_binary.outputs.blossomHash }}
+          filename: ${{ env.MODULE_NAME }}-${{ matrix.target.model }}-${{ env.ARCH }}
           content: "TollGate Module Relay binary for ${{ matrix.target.name }}"
           nsec: ${{ secrets.NSEC }}
           size: ${{ steps.upload_binary.outputs.size }}
           architecture: ${{ matrix.target.goarch }}
+          model: ${{ matrix.target.model }}
+          module: ${{ env.MODULE_NAME }}
+          version: "0.0.1"
 
       - name: Verify Binary NIP-94 Event
         id: verify_binary
