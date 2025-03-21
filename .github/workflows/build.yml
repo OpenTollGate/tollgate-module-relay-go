@@ -222,18 +222,32 @@ jobs:
           filePath: ${{ env.PACKAGE_FULLPATH }}
           nostrPrivateKey: ${{ secrets.NSECBECH }}
 
+      - name: Debug Blossom Upload Outputs
+        run: |
+          echo "Upload success: ${{ steps.upload_package.outputs.success }}"
+          echo "Available outputs from uploader:"
+          echo "url: ${{ steps.upload_package.outputs.url }}"
+          echo "blossomUrl: ${{ steps.upload_package.outputs.blossomUrl }}"
+          echo "hash: ${{ steps.upload_package.outputs.hash }}"
+          echo "blossomHash: ${{ steps.upload_package.outputs.blossomHash }}"
+          echo "size: ${{ steps.upload_package.outputs.size }}"
+
       - name: Publish Package NIP-94 Metadata
         id: publish_package
         if: steps.upload_package.outputs.success == 'true'
         uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
         with:
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-          url: ${{ steps.upload_package.outputs.blossomUrl }}
+          url: ${{ steps.upload_package.outputs.url || steps.upload_package.outputs.blossomUrl }}
           mimeType: application/x-opkg
-          fileHash: ${{ steps.upload_package.outputs.blossomHash }}
-          originalHash: ${{ steps.upload_package.outputs.blossomHash }}
+          fileHash: ${{ steps.upload_package.outputs.hash || steps.upload_package.outputs.blossomHash }}
+          originalHash: ${{ steps.upload_package.outputs.hash || steps.upload_package.outputs.blossomHash }}
           filename: "${{ env.PACKAGE_FILENAME }}"
-          content: "TollGate Module Relay OpenWRT package for ${{ env.MODEL }}. Module:${{ env.MODULE_NAME }}, Version:0.0.1"
+          content: |
+            TollGate Module Relay OpenWRT package for ${{ env.MODEL }}
+            Module: ${{ env.MODULE_NAME }}
+            Version: 0.0.1
+            Platform: ${{ env.PLATFORM }}
           nsec: ${{ secrets.NSEC }}
           size: ${{ steps.upload_package.outputs.size }}
           architecture: "${{ env.ARCH }}"
