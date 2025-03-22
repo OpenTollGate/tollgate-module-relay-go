@@ -67,18 +67,27 @@ define Build/Configure
 endef
 
 define Build/Compile
+
 	# Detect target architecture
-	ifeq ($(strip $(ARCH)),arm64)
-		GOARCH=arm64
-	else ifeq ($(strip $(ARCH)),aarch64)
-		GOARCH=arm64
-	else ifeq ($(strip $(ARCH)),mipsel)
-		GOARCH=mipsle
-	else ifeq ($(strip $(ARCH)),mips)
-		GOARCH=mips
+	GOARCH:=
+	ifneq ($(filter arm64 aarch64,$(ARCH)),)
+		GOARCH:=arm64
+	else ifneq ($(filter mipsel,$(ARCH)),)
+		GOARCH:=mipsle
+	else ifneq ($(filter mips,$(ARCH)),)
+		GOARCH:=mips
+	else ifneq ($(filter arm,$(ARCH)),)
+		GOARCH:=arm
+	else ifneq ($(filter x86_64,$(ARCH)),)
+		GOARCH:=amd64
+	else ifneq ($(filter i386 i686,$(ARCH)),)
+		GOARCH:=386
 	else
-		$(error Ping: Unsupported architecture: $(ARCH))
+		$(warning Unrecognized architecture: $(ARCH), defaulting to $(ARCH))
+		GOARCH:=$(ARCH)
 	endif
+	
+	@echo "Building for architecture: $(ARCH) -> Go architecture: $(GOARCH)"
 
 	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
 	ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
