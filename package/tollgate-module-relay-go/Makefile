@@ -57,8 +57,11 @@ define Build/Prepare
 	go mod edit -replace github.com/OpenTollgate/relay=./ && \
 	go mod edit -replace github.com/bytedance/sonic=github.com/bytedance/sonic@v1.12.10 && \
 	go mod edit -require github.com/bytedance/sonic@v1.12.10 && \
+	# Pin khatru to an earlier version compatible with Go 1.21
+	go mod edit -require github.com/fiatjaf/khatru@v0.16.2 && \
 	go mod tidy && \
-	go get github.com/fiatjaf/khatru && \
+	GOFLAGS="-modcacherw -mod=mod" \
+	go get github.com/fiatjaf/khatru@v0.16.2 && \
 	go get github.com/nbd-wtf/go-nostr && \
 	go list -m github.com/bytedance/sonic
 endef
