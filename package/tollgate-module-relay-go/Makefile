@@ -89,6 +89,7 @@ define Build/Compile
 	# endif
 	# @echo "Building for architecture: $(ARCH) -> Go architecture: $(GOARCH)"
 	#GOARCH:=arm64
+	#GOARCH=$(GOARCH) \
 
 	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
 	ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
@@ -97,7 +98,6 @@ define Build/Compile
 	GO111MODULE=on \
 	CGO_ENABLED=0 \
 	GOOS=linux \
-	GOARCH=$(GOARCH) \
 	GOFLAGS="-mod=vendor -modcacherw" \
 	GOWORK=off \
 	GOTOOLCHAIN=local \
