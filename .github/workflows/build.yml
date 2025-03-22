@@ -263,11 +263,21 @@ jobs:
           eventId: ${{ steps.publish_package.outputs.eventId }}
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
-      # - name: Check Package Publication
-      #   if: steps.verify_package.outcome != 'success'
-      #   run: |
-      #     echo "❌ Failed to verify package publication on relays"
-      #     exit 1
+      - name: Debug NIP-94 Event Contents
+        if: steps.publish_package.outputs.eventId != ''
+        run: |
+          echo "Event ID: ${{ steps.publish_package.outputs.eventId }}"
+          
+          # Install nak if not already installed
+          which nak || pip install nak
+          
+          # Query the event directly to verify URL and hash tags
+          nak event -i ${{ steps.publish_package.outputs.eventId }} -r wss://relay.damus.io | jq . > event.json
+          
+          echo "URL from event: $(jq -r '.tags[] | select(.[0] == "url")[1]' event.json)"
+          echo "Hash from event: $(jq -r '.tags[] | select(.[0] == "x")[1]' event.json)"
+          
+          # This will help verify the tags are correctly included in the event
 
       - name: Upload Package Artifact
         uses: actions/upload-artifact@v4

@@ -70,6 +70,8 @@ define Build/Compile
 	# Detect target architecture
 	ifeq ($(ARCH),arm64)
 		GOARCH=arm64
+	else ifeq ($(ARCH),aarch64)
+		GOARCH=arm64
 	else ifeq ($(ARCH),mipsel)
 		GOARCH=mipsle
 	else ifeq ($(ARCH),mips)
