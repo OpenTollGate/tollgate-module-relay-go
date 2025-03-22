@@ -149,5 +149,8 @@ endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
 
-# Print IPK path after successful compilation
-PKG_FINISH:=$(shell echo "Successfully built: $(IPK_FILE)" >&2)
+# # Print IPK path after successful compilation - FIXED VERSION
+# ifneq ($(CONFIG_PACKAGE_$(PKG_NAME)),)
+#   # Only try to print if package is selected for build
+#   PKG_FINISH:=$(shell echo "Successfully built package: $(PKG_NAME)" >&2)
+# endif
