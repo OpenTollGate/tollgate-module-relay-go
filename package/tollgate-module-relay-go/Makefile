@@ -60,7 +60,7 @@ define Build/Prepare
 	go mod edit -require github.com/fiatjaf/khatru@v0.17.2 && \
 	go mod tidy && \
 	GOFLAGS="-modcacherw -mod=mod" \
-	go get github.com/fiatjaf/khatru@v0.17.02 && \
+	go get github.com/fiatjaf/khatru@v0.17.2 && \
 	go get github.com/nbd-wtf/go-nostr && \
 	go list -m github.com/bytedance/sonic
 endef
