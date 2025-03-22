@@ -88,8 +88,7 @@ define Build/Compile
 	# 	GOARCH:=$(ARCH)
 	# endif
 	# @echo "Building for architecture: $(ARCH) -> Go architecture: $(GOARCH)"
-
-	GOARCH:=arm64
+	#GOARCH:=arm64
 
 	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
 	ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
