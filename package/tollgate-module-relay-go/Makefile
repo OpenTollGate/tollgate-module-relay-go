@@ -57,7 +57,6 @@ define Build/Prepare
 	go mod edit -replace github.com/OpenTollgate/relay=./ && \
 	go mod edit -replace github.com/bytedance/sonic=github.com/bytedance/sonic@v1.12.10 && \
 	go mod edit -require github.com/bytedance/sonic@v1.12.10 && \
-	# Pin khatru to an earlier version compatible with Go 1.21
 	go mod edit -require github.com/fiatjaf/khatru@v0.16.2 && \
 	go mod tidy && \
 	GOFLAGS="-modcacherw -mod=mod" \
@@ -98,8 +97,9 @@ define Build/Compile
 	CGO_ENABLED=0 \
 	GOOS=linux \
 	GOARCH=$(GOARCH) \
-	GOFLAGS="-mod=readonly -modcacherw" \
+	GOFLAGS="-mod=vendor -modcacherw" \
 	GOWORK=off \
+	GOTOOLCHAIN=local \
 	go mod tidy && \
 	go mod vendor && \
 	echo "Vendored dependencies:" && \
