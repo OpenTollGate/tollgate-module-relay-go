@@ -70,7 +70,7 @@ define Build/Compile
 
 	# Detect target architecture
 	GOARCH:=
-	ifneq ($(filter arm64 aarch64,$(ARCH)),)
+	ifneq ($(filter arm64,$(ARCH)) $(shell echo "$(ARCH)" | grep -E "^aarch64"),)
 		GOARCH:=arm64
 	else ifneq ($(filter mipsel,$(ARCH)),)
 		GOARCH:=mipsle
@@ -86,7 +86,6 @@ define Build/Compile
 		$(warning Unrecognized architecture: $(ARCH), defaulting to $(ARCH))
 		GOARCH:=$(ARCH)
 	endif
-	
 	@echo "Building for architecture: $(ARCH) -> Go architecture: $(GOARCH)"
 
 	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
