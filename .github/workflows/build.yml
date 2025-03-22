@@ -157,7 +157,8 @@ jobs:
 
   build-package:
     # needs: build-binary
-    runs-on: [self-hosted, Linux, X64]
+    # runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     env:
       MODULE_NAME: "relay"
     strategy:
