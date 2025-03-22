@@ -77,7 +77,7 @@ define Build/Compile
 	else ifeq ($(ARCH),mips)
 		GOARCH=mips
 	else
-		$(error Unsupported architecture: $(ARCH))
+		$(error Ping: Unsupported architecture: $(ARCH))
 	endif
 
 	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
