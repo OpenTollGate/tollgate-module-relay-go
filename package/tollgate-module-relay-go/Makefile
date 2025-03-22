@@ -121,16 +121,16 @@ define Build/Compile
 	@file $(PKG_BUILD_DIR)/tollgate-relay | grep -q "ELF.*$(GOARCH)" || \
 		(echo "Binary architecture mismatch!"; file $(PKG_BUILD_DIR)/tollgate-relay; exit 1)
 
-	# Build the IPK package manually
-	$(MAKE) -C $(PKG_BUILD_DIR) IPKG_BUILD=1 \
-		IPKG_ARCH="$(ARCH)" \
-		IPKG_RELEASE="$(PKG_RELEASE)" \
-		IPKG_VERSION="$(PKG_VERSION)" \
-		IPKG_DESCRIPTION="TollGate Relay Module" \
-		IPKG_MAINTAINER="Your Name <your@email.com>" \
-		IPKG_SECTION="net" \
-		IPKG_CATEGORY="Network" \
-		package/ipkg
+	# # Build the IPK package manually
+	# $(MAKE) -C $(PKG_BUILD_DIR) IPKG_BUILD=1 \
+	# 	IPKG_ARCH="$(ARCH)" \
+	# 	IPKG_RELEASE="$(PKG_RELEASE)" \
+	# 	IPKG_VERSION="$(PKG_VERSION)" \
+	# 	IPKG_DESCRIPTION="TollGate Relay Module" \
+	# 	IPKG_MAINTAINER="Your Name <your@email.com>" \
+	# 	IPKG_SECTION="net" \
+	# 	IPKG_CATEGORY="Network" \
+	# 	package/ipkg
 endef
 
 define Package/$(PKG_NAME)/install
