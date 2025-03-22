@@ -14,6 +14,13 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run at midnight UTC every day
 
+# Use self-hosted runners for all jobs in this workflow
+runs-on: self-hosted
+
+# defaults:
+#   run:
+#     shell: bash
+
 # Add global env vars for the whole workflow
 env:
   DEFAULT_MODULE_NAME: "relay"
