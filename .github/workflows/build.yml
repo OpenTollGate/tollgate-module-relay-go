@@ -14,12 +14,6 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run at midnight UTC every day
 
-# Use self-hosted runners for all jobs in this workflow
-runs-on: self-hosted
-
-# defaults:
-#   run:
-#     shell: bash
 
 # Add global env vars for the whole workflow
 env:
@@ -27,7 +21,7 @@ env:
 
 jobs:
   build-binary:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     permissions:
       contents: read
       id-token: write
@@ -163,7 +157,7 @@ jobs:
 
   build-package:
     needs: build-binary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     env:
       MODULE_NAME: "relay"
     strategy:
