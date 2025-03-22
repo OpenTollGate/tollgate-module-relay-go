@@ -68,13 +68,13 @@ endef
 
 define Build/Compile
 	# Detect target architecture
-	ifeq ($(ARCH),arm64)
+	ifeq ($(strip $(ARCH)),arm64)
 		GOARCH=arm64
-	else ifeq ($(ARCH),aarch64)
+	else ifeq ($(strip $(ARCH)),aarch64)
 		GOARCH=arm64
-	else ifeq ($(ARCH),mipsel)
+	else ifeq ($(strip $(ARCH)),mipsel)
 		GOARCH=mipsle
-	else ifeq ($(ARCH),mips)
+	else ifeq ($(strip $(ARCH)),mips)
 		GOARCH=mips
 	else
 		$(error Ping: Unsupported architecture: $(ARCH))
