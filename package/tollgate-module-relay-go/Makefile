@@ -69,7 +69,6 @@ endef
 define Build/Compile
 
 	# Detect target architecture
-	GOARCH:=
 	ifneq ($(filter arm64,$(ARCH)) $(shell echo "$(ARCH)" | grep -E "^aarch64"),)
 		GOARCH:=arm64
 	else ifneq ($(filter mipsel,$(ARCH)),)
