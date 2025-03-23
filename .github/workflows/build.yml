@@ -279,5 +279,5 @@ jobs:
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: OpenTollGate/tollgate-os
-          event-type: dispatch-update-release-json
+          event-type: update-release-json
 
