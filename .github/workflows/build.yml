@@ -180,16 +180,26 @@ jobs:
           nostrPrivateKey: ${{ secrets.NSECBECH }}
           desiredExtension: ipk
 
-      - name: Process URL Extension
-        shell: bash
-        id: process_url
+      # Add a step to save the outputs to environment variables
+      - name: Save Upload Results to Environment
         run: |
-          ORIGINAL_URL="$URL_FROM_UPLOAD"
-          if [ "${{ inputs.desiredExtension }}" != "bin" ]; then
-            PROCESSED_URL="${ORIGINAL_URL/.bin/.${{ inputs.desiredExtension }}}"
-            echo "url=$PROCESSED_URL" >> $GITHUB_OUTPUT
+          # Debug first
+          echo "Upload outputs:"
+          echo "  URL: ${{ steps.upload_package.outputs.url }}"
+          echo "  Hash: ${{ steps.upload_package.outputs.hash }}"
+          echo "  Success: ${{ steps.upload_package.outputs.success }}"
+          
+          # Save to environment variables
+          echo "PACKAGE_URL=${{ steps.upload_package.outputs.url }}" >> $GITHUB_ENV
+          echo "PACKAGE_HASH=${{ steps.upload_package.outputs.hash }}" >> $GITHUB_ENV
+          
+          # Get file size directly if needed
+          if [ -f "${{ env.PACKAGE_FULLPATH }}" ]; then
+            FILE_SIZE=$(stat -c%s "${{ env.PACKAGE_FULLPATH }}")
+            echo "PACKAGE_SIZE=$FILE_SIZE" >> $GITHUB_ENV
+            echo "File size: $FILE_SIZE bytes"
           else
-            echo "url=$ORIGINAL_URL" >> $GITHUB_OUTPUT
+            echo "WARNING: Package file not found at ${{ env.PACKAGE_FULLPATH }}"
           fi
 
       - name: Publish Package NIP-94 Metadata
@@ -198,10 +208,10 @@ jobs:
         uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
         with:
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-          url: ${{ steps.process_url.outputs.url }}
+          url: ${{ env.PACKAGE_URL }}
           mimeType: application/x-opkg
-          fileHash: ${{ steps.upload_package.outputs.blossomHash }}
-          originalHash: ${{ steps.upload_package.outputs.blossomHash }}
+          fileHash: ${{ env.PACKAGE_HASH }}
+          originalHash: ${{ env.PACKAGE_HASH }}
           filename: "${{ env.PACKAGE_FILENAME }}"
           content: |
             {
@@ -211,7 +221,7 @@ jobs:
               "version": "0.0.1"
             }
           nsec: ${{ secrets.NSEC }}
-          size: ${{ steps.upload_package.outputs.size }}
+          size: ${{ env.PACKAGE_SIZE }}
           architecture: "${{ env.ARCH }}"
 
       - name: Verify Package NIP-94 Event
