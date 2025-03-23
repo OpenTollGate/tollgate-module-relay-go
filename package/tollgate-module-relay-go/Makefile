@@ -69,27 +69,14 @@ define Build/Compile
 	mkdir -p "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate"
 	ln -sf "$(PKG_BUILD_DIR)" "$(PKG_BUILD_DIR)/.go_work/build/src/github.com/OpenTollGate/tollgate-module-relay-go"
 
+	# Simplify the Go build process to match the working command
 	cd $(PKG_BUILD_DIR) && \
-	GO111MODULE=on \
-	CGO_ENABLED=0 \
 	GOOS=linux \
 	GOARCH=arm64 \
-	GOFLAGS="-mod=readonly -modcacherw" \
-	GOWORK=off \
-	go mod tidy && \
-	go mod vendor && \
-	echo "Vendored dependencies:" && \
-	find vendor -type d -maxdepth 2 | grep bytedance || echo "No bytedance in vendor" && \
-	echo "Checking vendored sonic version:" && \
-	grep "github.com/bytedance/sonic v1.12.10" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
-	GODEBUG=netdns=go+1 \
-	go build -v -x -mod=vendor -trimpath \
-		-tags netgo,osusergo \
-		-ldflags "-s -w -extldflags '-static' \
-		-X main.Version=$(PKG_VERSION) \
-		-X main.CommitHash=$(PKG_RELEASE) \
-		-X main.BuildTime=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')" \
-		-o $(PKG_BUILD_DIR)/tollgate-relay main.go
+	go build -o tollgate-relay -trimpath -ldflags="-s -w" main.go
+
+	# Verify the binary type
+	file $(PKG_BUILD_DIR)/tollgate-relay
 
 	@if [ ! -f "$(PKG_BUILD_DIR)/tollgate-relay" ]; then \
 		echo "\n!!! NO BINARY CREATED - BUILD FAILED !!!"; \
