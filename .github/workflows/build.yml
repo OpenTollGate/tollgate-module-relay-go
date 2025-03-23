@@ -271,7 +271,7 @@ jobs:
           echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
 
   install-os:
-    needs: build
+    needs: build-package
     runs-on: ubuntu-latest
     steps:
       - name: Trigger OS Workflow
