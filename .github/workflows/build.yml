@@ -59,11 +59,23 @@ jobs:
 
   #     - name: Upload Binary to Blossom
   #       id: upload_binary
-  #       uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
+  #       uses: c03rad0r/cli-blossom-uploader-go@main
   #       with:
   #         host: "https://blossom.swissdash.site"
   #         filePath: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
-  #         nostrPrivateKey: ${{ secrets.NSEC }}
+  #         nostrPrivateKey: ${{ secrets.NSECBECH }}
+
+  #     - name: Verify Binary Integrity
+  #       run: |
+  #         echo "Original hash: $(sha256sum ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }})"
+  #         echo "Uploaded hash: ${{ steps.upload_binary.outputs.hash }}"
+          
+  #         if [ "$(sha256sum ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }} | cut -d' ' -f1)" != "${{ steps.upload_binary.outputs.hash }}" ]; then
+  #           echo "❌ Hash mismatch! File corrupted during upload"
+  #           exit 1
+  #         else
+  #           echo "✅ Hashes match - file integrity maintained"
+  #         fi
 
   #     - name: Publish Binary NIP-94 Metadata
   #       id: publish_binary
