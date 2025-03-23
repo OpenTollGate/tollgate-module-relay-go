@@ -34,7 +34,8 @@ define Package/$(PKG_NAME)
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=TollGate Relay Module
-	DEPENDS:=$(GO_ARCH_DEPENDS)
+	DEPENDS:=$(GO_ARCH_DEPENDS) +uboot-envtools
+	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
@@ -73,7 +74,7 @@ define Build/Compile
 	GO111MODULE=on \
 	CGO_ENABLED=0 \
 	GOOS=linux \
-	GOARCH=arm64 \
+	GOARCH=$(GOARCH) \
 	GOFLAGS="-mod=readonly -modcacherw" \
 	GOWORK=off \
 	go mod tidy && \
@@ -84,11 +85,12 @@ define Build/Compile
 	grep "github.com/bytedance/sonic v1.12.10" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
 	GODEBUG=netdns=go+1 \
 	go build -v -x -mod=vendor -trimpath \
-		-tags netgo,osusergo \
 		-ldflags "-s -w -extldflags '-static' \
 		-X main.Version=$(PKG_VERSION) \
 		-X main.CommitHash=$(PKG_RELEASE) \
 		-X main.BuildTime=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')" \
+	    $(if $(filter mips mipsle,$(GOARCH)),-tags musl) \
+	    -tags netgo,osusergo \
 		-o $(PKG_BUILD_DIR)/tollgate-relay main.go
 
 	@if [ ! -f "$(PKG_BUILD_DIR)/tollgate-relay" ]; then \
@@ -106,6 +108,15 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tollgate-relay $(1)/usr/bin/tollgate-relay
+	
+	# Add U-Boot env config
+	$(INSTALL_DIR) $(1)/etc
+	echo "/dev/mtd1 0x0 0x1000 0x10000" > $(1)/etc/fw_env.config
+	
+	# Create empty directories to prevent warnings
+	$(INSTALL_DIR) $(1)/usr/lib/opkg
+	$(INSTALL_DIR) $(1)/CONTROL
+	touch $(1)/CONTROL/control
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
