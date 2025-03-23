@@ -34,8 +34,7 @@ define Package/$(PKG_NAME)
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=TollGate Relay Module
-	DEPENDS:=$(GO_ARCH_DEPENDS) +uboot-envtools
-	PKGARCH:=all
+	DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
 
 define Package/$(PKG_NAME)/description
@@ -57,10 +56,8 @@ define Build/Prepare
 	go mod edit -replace github.com/OpenTollgate/relay=./ && \
 	go mod edit -replace github.com/bytedance/sonic=github.com/bytedance/sonic@v1.12.10 && \
 	go mod edit -require github.com/bytedance/sonic@v1.12.10 && \
-	go mod edit -require github.com/fiatjaf/khatru@v0.17.2 && \
 	go mod tidy && \
-	GOFLAGS="-modcacherw -mod=mod" \
-	go get github.com/fiatjaf/khatru@v0.17.2 && \
+	go get github.com/fiatjaf/khatru && \
 	go get github.com/nbd-wtf/go-nostr && \
 	go list -m github.com/bytedance/sonic
 endef
@@ -76,9 +73,9 @@ define Build/Compile
 	GO111MODULE=on \
 	CGO_ENABLED=0 \
 	GOOS=linux \
-	GOFLAGS="-mod=vendor -modcacherw" \
+	GOARCH=arm64 \
+	GOFLAGS="-mod=readonly -modcacherw" \
 	GOWORK=off \
-	GOTOOLCHAIN=local \
 	go mod tidy && \
 	go mod vendor && \
 	echo "Vendored dependencies:" && \
@@ -87,12 +84,11 @@ define Build/Compile
 	grep "github.com/bytedance/sonic v1.12.10" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
 	GODEBUG=netdns=go+1 \
 	go build -v -x -mod=vendor -trimpath \
+		-tags netgo,osusergo \
 		-ldflags "-s -w -extldflags '-static' \
 		-X main.Version=$(PKG_VERSION) \
 		-X main.CommitHash=$(PKG_RELEASE) \
 		-X main.BuildTime=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')" \
-	    $(if $(filter mips mipsle,$(GOARCH)),-tags musl) \
-	    -tags netgo,osusergo \
 		-o $(PKG_BUILD_DIR)/tollgate-relay main.go
 
 	@if [ ! -f "$(PKG_BUILD_DIR)/tollgate-relay" ]; then \
@@ -105,41 +101,14 @@ define Build/Compile
 	# Create symlink to binary in expected location for install phase
 	mkdir -p $(PKG_BUILD_DIR)/.go_work/build/bin
 	ln -sf $(PKG_BUILD_DIR)/tollgate-relay $(PKG_BUILD_DIR)/.go_work/build/bin/tollgate-relay
-
-	@echo "Verifying binary compatibility..."
-	@file $(PKG_BUILD_DIR)/tollgate-relay | grep -q "ELF.*$(GOARCH)" || \
-		(echo "Binary architecture mismatch!"; file $(PKG_BUILD_DIR)/tollgate-relay; exit 1)
-
-	# # Build the IPK package manually
-	# $(MAKE) -C $(PKG_BUILD_DIR) IPKG_BUILD=1 \
-	# 	IPKG_ARCH="$(ARCH)" \
-	# 	IPKG_RELEASE="$(PKG_RELEASE)" \
-	# 	IPKG_VERSION="$(PKG_VERSION)" \
-	# 	IPKG_DESCRIPTION="TollGate Relay Module" \
-	# 	IPKG_MAINTAINER="Your Name <your@email.com>" \
-	# 	IPKG_SECTION="net" \
-	# 	IPKG_CATEGORY="Network" \
-	# 	package/ipkg
 endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tollgate-relay $(1)/usr/bin/tollgate-relay
-	
-	# Add U-Boot env config
-	$(INSTALL_DIR) $(1)/etc
-	echo "/dev/mtd1 0x0 0x1000 0x10000" > $(1)/etc/fw_env.config
-	
-	# Create empty directories to prevent warnings
-	$(INSTALL_DIR) $(1)/usr/lib/opkg
-	$(INSTALL_DIR) $(1)/CONTROL
-	touch $(1)/CONTROL/control
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
 
-# # Print IPK path after successful compilation - FIXED VERSION
-# ifneq ($(CONFIG_PACKAGE_$(PKG_NAME)),)
-#   # Only try to print if package is selected for build
-#   PKG_FINISH:=$(shell echo "Successfully built package: $(PKG_NAME)" >&2)
-# endif
+# Print IPK path after successful compilation
+PKG_FINISH:=$(shell echo "Successfully built: $(IPK_FILE)" >&2)
