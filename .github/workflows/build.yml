@@ -178,6 +178,19 @@ jobs:
           host: "https://blossom.swissdash.site"
           filePath: ${{ env.PACKAGE_FULLPATH }}
           nostrPrivateKey: ${{ secrets.NSECBECH }}
+          desiredExtension: ipk
+
+      - name: Process URL Extension
+        shell: bash
+        id: process_url
+        run: |
+          ORIGINAL_URL="$URL_FROM_UPLOAD"
+          if [ "${{ inputs.desiredExtension }}" != "bin" ]; then
+            PROCESSED_URL="${ORIGINAL_URL/.bin/.${{ inputs.desiredExtension }}}"
+            echo "url=$PROCESSED_URL" >> $GITHUB_OUTPUT
+          else
+            echo "url=$ORIGINAL_URL" >> $GITHUB_OUTPUT
+          fi
 
       - name: Publish Package NIP-94 Metadata
         id: publish_package
@@ -185,7 +198,7 @@ jobs:
         uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
         with:
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-          url: ${{ steps.upload_package.outputs.blossomUrl }}
+          url: ${{ steps.process_url.outputs.url }}
           mimeType: application/x-opkg
           fileHash: ${{ steps.upload_package.outputs.blossomHash }}
           originalHash: ${{ steps.upload_package.outputs.blossomHash }}
