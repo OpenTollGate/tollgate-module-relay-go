@@ -203,13 +203,16 @@ jobs:
           fileHash: ${{ steps.upload_package.outputs.blossomHash }}
           originalHash: ${{ steps.upload_package.outputs.blossomHash }}
           filename: "${{ env.PACKAGE_FILENAME }}"
-          content: "TollGate Module Relay OpenWRT package for ${{ env.MODEL }}. Module:${{ env.MODULE_NAME }}, Version:0.0.1"
+          content: |
+            {
+              "description": "TollGate Module Relay OpenWRT package for ${{ env.MODEL }}",
+              "module": "${{ env.MODULE_NAME }}",
+              "model": "${{ env.MODEL }}",
+              "version": "0.0.1"
+            }
           nsec: ${{ secrets.NSEC }}
           size: ${{ steps.upload_package.outputs.size }}
           architecture: "${{ env.ARCH }}"
-          model: "${{ env.MODEL }}"
-          module: "${{ env.MODULE_NAME }}"
-          version: "0.0.1"
 
       - name: Verify Package NIP-94 Event
         id: verify_package
