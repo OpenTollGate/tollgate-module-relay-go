@@ -19,143 +19,143 @@ env:
   DEFAULT_MODULE_NAME: "relay"
 
 jobs:
-  # build-binary:
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #   # Add job-level env vars
-  #   env:
-  #     MODULE_NAME: "relay"
-  #   strategy:
-  #     matrix:
-  #       target:
-  #         # - name: gl-ar300m
-  #         #   goarch: mips
-  #         #   gomips: softfloat
-  #         #   tags: musl,netgo,osusergo
-  #         #   ldflags: "-s -w -extldflags '-static'"
-  #         - name: gl-mt3000
-  #           goarch: arm64
-  #           tags: netgo,osusergo
-  #           ldflags: "-s -w"
-  #           model: gl-mt3000
-  #           arch: aarch64_cortex-a53
-  #         - name: glmt6000
-  #           goarch: arm64
-  #           model: gl-mt6000
-  #           arch: aarch64_cortex-a53
-  #   steps:
-  #     - uses: actions/checkout@v3
+  build-binary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    # Add job-level env vars
+    env:
+      MODULE_NAME: "relay"
+    strategy:
+      matrix:
+        target:
+          # - name: gl-ar300m
+          #   goarch: mips
+          #   gomips: softfloat
+          #   tags: musl,netgo,osusergo
+          #   ldflags: "-s -w -extldflags '-static'"
+          - name: gl-mt3000
+            goarch: arm64
+            tags: netgo,osusergo
+            ldflags: "-s -w"
+            model: gl-mt3000
+            arch: aarch64_cortex-a53
+          - name: glmt6000
+            goarch: arm64
+            model: gl-mt6000
+            arch: aarch64_cortex-a53
+    steps:
+      - uses: actions/checkout@v3
 
-  #     # Add this step at the beginning to set all environment variables
-  #     - name: Set Environment Variables
-  #       run: |
-  #         # Set variables that will be available to all following steps
-  #         echo "MODULE_NAME=${MODULE_NAME:-relay}" >> $GITHUB_ENV
-  #         echo "MODEL=${{ matrix.target.model }}" >> $GITHUB_ENV
-  #         echo "ARCH=${{ matrix.target.arch }}" >> $GITHUB_ENV
-  #         echo "PACKAGE_FILENAME=${MODULE_NAME:-relay}-${{ matrix.target.model }}-${{ matrix.target.arch }}.ipk" >> $GITHUB_ENV
+      # Add this step at the beginning to set all environment variables
+      - name: Set Environment Variables
+        run: |
+          # Set variables that will be available to all following steps
+          echo "MODULE_NAME=${MODULE_NAME:-relay}" >> $GITHUB_ENV
+          echo "MODEL=${{ matrix.target.model }}" >> $GITHUB_ENV
+          echo "ARCH=${{ matrix.target.arch }}" >> $GITHUB_ENV
+          echo "PACKAGE_FILENAME=${MODULE_NAME:-relay}-${{ matrix.target.model }}-${{ matrix.target.arch }}.ipk" >> $GITHUB_ENV
           
-  #         # Debug output
-  #         echo "Set MODULE_NAME to $(echo $MODULE_NAME)"
-  #         echo "Set MODEL to ${{ matrix.target.model }}"
-  #         echo "Set ARCH to ${{ matrix.target.arch }}"
-  #         echo "Set PACKAGE_FILENAME to $(echo ${MODULE_NAME:-relay}-${{ matrix.target.model }}-${{ matrix.target.arch }}.ipk)"
+          # Debug output
+          echo "Set MODULE_NAME to $(echo $MODULE_NAME)"
+          echo "Set MODEL to ${{ matrix.target.model }}"
+          echo "Set ARCH to ${{ matrix.target.arch }}"
+          echo "Set PACKAGE_FILENAME to $(echo ${MODULE_NAME:-relay}-${{ matrix.target.model }}-${{ matrix.target.arch }}.ipk)"
 
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v4
-  #       with:
-  #         go-version: '1.21'
-  #         cache: true
-  #         cache-dependency-path: ./package/tollgate-module-relay-go/src/go.sum
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+          cache-dependency-path: ./package/tollgate-module-relay-go/src/go.sum
 
-  #     - name: Build Binary
-  #       run: |
-  #         cd ./package/tollgate-module-relay-go/src
-  #         env GOOS=linux GOARCH=${{ matrix.target.goarch }} \
-  #           GOMIPS=${{ matrix.target.gomips }} CGO_ENABLED=0 \
-  #           go build -o binary-${{ matrix.target.name }} -trimpath \
-  #           -ldflags="${{ matrix.target.ldflags }}" #\
-  #           #-tags="${{ matrix.target.tags }}"
-  #         # env GOOS=linux GOARCH=arm64 go build -o binary-${{ matrix.target.name }} -trimpath -ldflags="-s -w"
+      - name: Build Binary
+        run: |
+          cd ./package/tollgate-module-relay-go/src
+          env GOOS=linux GOARCH=${{ matrix.target.goarch }} \
+            GOMIPS=${{ matrix.target.gomips }} CGO_ENABLED=0 \
+            go build -o binary-${{ matrix.target.name }} -trimpath \
+            -ldflags="${{ matrix.target.ldflags }}" #\
+            #-tags="${{ matrix.target.tags }}"
+          # env GOOS=linux GOARCH=arm64 go build -o binary-${{ matrix.target.name }} -trimpath -ldflags="-s -w"
 
-  #     - name: Upload Binary to Blossom
-  #       id: upload_binary
-  #       uses: c03rad0r/cli-blossom-uploader-go@main
-  #       with:
-  #         host: "https://blossom.swissdash.site"
-  #         filePath: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
-  #         nostrPrivateKey: ${{ secrets.NSECBECH }}
+      - name: Upload Binary to Blossom
+        id: upload_binary
+        uses: c03rad0r/cli-blossom-uploader-go@main
+        with:
+          host: "https://blossom.swissdash.site"
+          filePath: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
+          nostrPrivateKey: ${{ secrets.NSECBECH }}
 
-  #     - name: Verify Binary Integrity
-  #       run: |
-  #         echo "Original hash: $(sha256sum ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }})"
-  #         echo "Uploaded hash: ${{ steps.upload_binary.outputs.hash }}"
+      - name: Verify Binary Integrity
+        run: |
+          echo "Original hash: $(sha256sum ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }})"
+          echo "Uploaded hash: ${{ steps.upload_binary.outputs.hash }}"
           
-  #         if [ "$(sha256sum ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }} | cut -d' ' -f1)" != "${{ steps.upload_binary.outputs.hash }}" ]; then
-  #           echo "❌ Hash mismatch! File corrupted during upload"
-  #           exit 1
-  #         else
-  #           echo "✅ Hashes match - file integrity maintained"
-  #         fi
+          if [ "$(sha256sum ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }} | cut -d' ' -f1)" != "${{ steps.upload_binary.outputs.hash }}" ]; then
+            echo "❌ Hash mismatch! File corrupted during upload"
+            exit 1
+          else
+            echo "✅ Hashes match - file integrity maintained"
+          fi
 
-  #     - name: Publish Binary NIP-94 Metadata
-  #       id: publish_binary
-  #       uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
-  #       with:
-  #         relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-  #         url: ${{ steps.upload_binary.outputs.blossomUrl }}
-  #         mimeType: application/octet-stream
-  #         fileHash: ${{ steps.upload_binary.outputs.blossomHash }}
-  #         originalHash: ${{ steps.upload_binary.outputs.blossomHash }}
-  #         filename: "${{ env.MODULE_NAME }}-${{ env.MODEL }}-${{ env.ARCH }}"
-  #         content: "TollGate Module Relay binary for ${{ env.MODEL }}"
-  #         nsec: ${{ secrets.NSEC }}
-  #         size: ${{ steps.upload_binary.outputs.size }}
-  #         architecture: "${{ env.ARCH }}"
-  #         model: "${{ env.MODEL }}"
-  #         module: "${{ env.MODULE_NAME }}"
-  #         version: "0.0.1"
+      - name: Publish Binary NIP-94 Metadata
+        id: publish_binary
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
+        with:
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+          url: ${{ steps.upload_binary.outputs.blossomUrl }}
+          mimeType: application/octet-stream
+          fileHash: ${{ steps.upload_binary.outputs.blossomHash }}
+          originalHash: ${{ steps.upload_binary.outputs.blossomHash }}
+          filename: "${{ env.MODULE_NAME }}-${{ env.MODEL }}-${{ env.ARCH }}"
+          content: "TollGate Module Relay binary for ${{ env.MODEL }}"
+          nsec: ${{ secrets.NSEC }}
+          size: ${{ steps.upload_binary.outputs.size }}
+          architecture: "${{ env.ARCH }}"
+          model: "${{ env.MODEL }}"
+          module: "${{ env.MODULE_NAME }}"
+          version: "0.0.1"
 
-  #     - name: Verify Binary NIP-94 Event
-  #       id: verify_binary
-  #       uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
-  #       with:
-  #         eventId: ${{ steps.publish_binary.outputs.eventId }}
-  #         relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+      - name: Verify Binary NIP-94 Event
+        id: verify_binary
+        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
+        with:
+          eventId: ${{ steps.publish_binary.outputs.eventId }}
+          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
-  #     - name: Debug NIP-94 Event Creation
-  #       run: |
-  #         echo "Package file: $PACKAGE_FILE"
-  #         echo "URL to be published: $PACKAGE_URL"
-  #         echo "Calculated hash: $PACKAGE_HASH"
-  #         echo "Architecture: $ARCH"
-  #         echo "Module name: $MODULE_NAME"
+      - name: Debug NIP-94 Event Creation
+        run: |
+          echo "Package file: $PACKAGE_FILE"
+          echo "URL to be published: $PACKAGE_URL"
+          echo "Calculated hash: $PACKAGE_HASH"
+          echo "Architecture: $ARCH"
+          echo "Module name: $MODULE_NAME"
           
-  #         # Extract module name from filename if missing
-  #         if [[ "$PACKAGE_FILE" =~ ^([^-]+)- ]]; then
-  #           echo "Extracted module: ${BASH_REMATCH[1]}"
-  #         else
-  #           echo "WARNING: Could not extract module from filename"
-  #         fi
+          # Extract module name from filename if missing
+          if [[ "$PACKAGE_FILE" =~ ^([^-]+)- ]]; then
+            echo "Extracted module: ${BASH_REMATCH[1]}"
+          else
+            echo "WARNING: Could not extract module from filename"
+          fi
   
 
-  #     - name: Check Binary Publication
-  #       if: steps.verify_binary.outcome != 'success'
-  #       run: |
-  #         echo "❌ Failed to verify binary publication on relays"
-  #         exit 1
+      - name: Check Binary Publication
+        if: steps.verify_binary.outcome != 'success'
+        run: |
+          echo "❌ Failed to verify binary publication on relays"
+          exit 1
           
-  #     - name: Upload Binary Artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: binary-${{ matrix.target.name }}
-  #         path: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
-  #         retention-days: 5
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target.name }}
+          path: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
+          retention-days: 5
 
   build-package:
-    #needs: build-binary
+    needs: build-binary
     runs-on: ubuntu-latest
     env:
       MODULE_NAME: "relay"
@@ -164,8 +164,8 @@ jobs:
         target: [
           #{name: "ath79-nor", goarch: "mips", gomips: "softfloat", model: "gl-ar300m16", platform: "ath79", subtarget: "generic", profile: "glinet_gl-ar300m16"},
           #{name: "ath79-nand", goarch: "mips", gomips: "softfloat", model: "gl-ar300m-nor", platform: "ath79", subtarget: "generic", profile: "glinet_gl-ar300m-nor"},
-          {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic", arch: "aarch64_cortex-a53"}#,
-          #{name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
+          {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic", arch: "aarch64_cortex-a53"},
+          {name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
         ]
       fail-fast: false
     steps:
@@ -270,10 +270,14 @@ jobs:
           echo "Binary URL: ${{ steps.upload_binary.outputs.blossomUrl }}"
           echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
 
+  install-os:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger OS Workflow
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: OpenTollGate/tollgate-os
-          event-type: update-release-json
+          event-type: dispatch-update-release-json
 
