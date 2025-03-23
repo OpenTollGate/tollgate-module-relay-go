@@ -83,7 +83,7 @@ define Build/Compile
 	echo "Checking vendored sonic version:" && \
 	grep "github.com/bytedance/sonic v1.12.10" vendor/modules.txt || (echo "Wrong sonic version!"; exit 1) && \
 	GODEBUG=netdns=go+1 \
-	go build -v -x -mod=vendor -trimpath \
+	go build -v -x -trimpath \
 		-tags netgo,osusergo \
 		-ldflags "-s -w -extldflags '-static' \
 		-X main.Version=$(PKG_VERSION) \
