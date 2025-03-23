@@ -1,6 +1,12 @@
 name: Build and Publish
 
 on:
+  workflow_run:
+    workflows: ["Prebuild Golang"]
+    types:
+      - completed
+  repository_dispatch:
+    types: [module-build-completed]
   push:
   pull_request:
     branches: [ "main" ]
@@ -8,100 +14,116 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run at midnight UTC every day
 
+# Add global env vars for the whole workflow
+env:
+  DEFAULT_MODULE_NAME: "relay"
+
 jobs:
-  build-binary:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    strategy:
-      matrix:
-        target:
-          - name: ath79
-            goarch: mips
-            gomips: softfloat
-            model: gl-ar300m
-          - name: glmt3000
-            goarch: arm64
-            model: gl-mt3000
-          - name: glmt6000
-            goarch: arm64
-            model: gl-mt6000
-    steps:
-      - uses: actions/checkout@v3
+  # build-binary:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     id-token: write
+  #   strategy:
+  #     matrix:
+  #       target:
+  #         - name: ath79
+  #           goarch: mips
+  #           gomips: softfloat
+  #           model: gl-ar300m
+  #         - name: glmt3000
+  #           goarch: arm64
+  #           model: gl-mt3000
+  #         - name: glmt6000
+  #           goarch: arm64
+  #           model: gl-mt6000
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-          cache: true
-          cache-dependency-path: ./package/tollgate-module-relay-go/src/go.sum
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v4
+  #       with:
+  #         go-version: '1.21'
+  #         cache: true
+  #         cache-dependency-path: ./package/tollgate-module-relay-go/src/go.sum
 
-      - name: Build Binary
-        run: |
-          cd ./package/tollgate-module-relay-go/src
-          EXTRA_FLAGS=""
-          if [ "${{ matrix.target.gomips }}" != "" ]; then
-            EXTRA_FLAGS="GOMIPS=${{ matrix.target.gomips }}"
-          fi
-          env GOOS=linux GOARCH=${{ matrix.target.goarch }} $EXTRA_FLAGS \
-            go build -o binary-${{ matrix.target.name }} -trimpath -ldflags="-s -w"
+  #     - name: Build Binary
+  #       run: |
+  #         cd ./package/tollgate-module-relay-go/src
+  #         EXTRA_FLAGS=""
+  #         if [ "${{ matrix.target.gomips }}" != "" ]; then
+  #           EXTRA_FLAGS="GOMIPS=${{ matrix.target.gomips }}"
+  #         fi
+  #         env GOOS=linux GOARCH=${{ matrix.target.goarch }} $EXTRA_FLAGS \
+  #           go build -o binary-${{ matrix.target.name }} -trimpath -ldflags="-s -w"
 
-      - name: Upload Binary to Blossom
-        id: upload_binary
-        uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
-        with:
-          host: "https://blossom.swissdash.site"
-          filePath: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
-          nostrPrivateKey: ${{ secrets.NSEC }}
+  #     - name: Upload Binary to Blossom
+  #       id: upload_binary
+  #       uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
+  #       with:
+  #         host: "https://blossom.swissdash.site"
+  #         filePath: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
+  #         nostrPrivateKey: ${{ secrets.NSEC }}
 
-      - name: Publish Binary NIP-94 Metadata
-        id: publish_binary
-        uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
-        with:
-          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
-          url: ${{ steps.upload_binary.outputs.blossomUrl }}
-          mimeType: application/octet-stream
-          fileHash: ${{ steps.upload_binary.outputs.blossomHash }}
-          originalHash: ${{ steps.upload_binary.outputs.blossomHash }}
-          content: "TollGate Module Relay binary for ${{ matrix.target.name }}"
-          nsec: ${{ secrets.NSEC }}
-          size: ${{ steps.upload_binary.outputs.size }}
-          architecture: ${{ matrix.target.goarch }}
+  #     - name: Publish Binary NIP-94 Metadata
+  #       id: publish_binary
+  #       uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
+  #       with:
+  #         relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+  #         url: ${{ steps.upload_binary.outputs.blossomUrl }}
+  #         mimeType: application/octet-stream
+  #         fileHash: ${{ steps.upload_binary.outputs.blossomHash }}
+  #         originalHash: ${{ steps.upload_binary.outputs.blossomHash }}
+  #         content: "TollGate Module Relay binary for ${{ matrix.target.name }}"
+  #         nsec: ${{ secrets.NSEC }}
+  #         size: ${{ steps.upload_binary.outputs.size }}
+  #         architecture: ${{ matrix.target.goarch }}
 
-      - name: Verify Binary NIP-94 Event
-        id: verify_binary
-        uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
-        with:
-          eventId: ${{ steps.publish_binary.outputs.eventId }}
-          relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
+  #     - name: Verify Binary NIP-94 Event
+  #       id: verify_binary
+  #       uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
+  #       with:
+  #         eventId: ${{ steps.publish_binary.outputs.eventId }}
+  #         relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
-      - name: Check Binary Publication
-        if: steps.verify_binary.outcome != 'success'
-        run: |
-          echo "❌ Failed to verify binary publication on relays"
-          exit 1
+  #     - name: Check Binary Publication
+  #       if: steps.verify_binary.outcome != 'success'
+  #       run: |
+  #         echo "❌ Failed to verify binary publication on relays"
+  #         exit 1
           
-      - name: Upload Binary Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: binary-${{ matrix.target.name }}
-          path: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
-          retention-days: 5
+  #     - name: Upload Binary Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: binary-${{ matrix.target.name }}
+  #         path: ./package/tollgate-module-relay-go/src/binary-${{ matrix.target.name }}
+  #         retention-days: 5
 
   build-package:
-    needs: build-binary
+    #needs: build-binary
     runs-on: ubuntu-latest
+    env:
+      MODULE_NAME: "relay"
     strategy:
       matrix:
         target: [
-          {name: "ath79", goarch: "mips", gomips: "softfloat", model: "gl-ar300m", platform: "ath79", subtarget: "generic"},
-          {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic"},
-          {name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
+          #{name: "ath79-nor", goarch: "mips", gomips: "softfloat", model: "gl-ar300m16", platform: "ath79", subtarget: "generic", profile: "glinet_gl-ar300m16"},
+          #{name: "ath79-nand", goarch: "mips", gomips: "softfloat", model: "gl-ar300m-nor", platform: "ath79", subtarget: "generic", profile: "glinet_gl-ar300m-nor"},
+          {name: "glmt3000", goarch: "arm64", model: "gl-mt3000", platform: "mediatek", subtarget: "filogic", arch: "aarch64_cortex-a53"}#,
+          #{name: "glmt6000", goarch: "arm64", model: "gl-mt6000", platform: "mediatek", subtarget: "filogic"}
         ]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
+
+      # Add this early in the job
+      - name: Set Environment Variables
+        run: |
+          echo "MODULE_NAME=${MODULE_NAME:-relay}" >> $GITHUB_ENV
+          echo "MODEL=${{ matrix.target.model }}" >> $GITHUB_ENV
+          echo "ARCH=${{ matrix.target.arch }}" >> $GITHUB_ENV
+          echo "PACKAGE_FILENAME=${MODULE_NAME:-relay}-${{ matrix.target.model }}-${{ matrix.target.arch }}.ipk" >> $GITHUB_ENV
+          echo "PLATFORM=${{ matrix.target.platform }}" >> $GITHUB_ENV
 
       # Download prebuilt golang packages
       - name: Download Prebuilt Golang
@@ -112,7 +134,9 @@ jobs:
           name: golang-${{ matrix.target.model }}-${{ matrix.target.platform }}-${{ matrix.target.subtarget }}
           path: prebuilt/
           repo: OpenTollGate/tollgate-sdk
-          
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+
       - name: Find Golang Package
         id: find_golang
         run: |
@@ -137,14 +161,15 @@ jobs:
 
       - name: Upload Package to Blossom
         id: upload_package
-        uses: c03rad0r/upload-blossom-action@pr/using-nsec-argument-correct-state
+        uses: c03rad0r/cli-blossom-uploader-go@main
         with:
           host: "https://blossom.swissdash.site"
           filePath: ${{ env.PACKAGE_FULLPATH }}
-          nostrPrivateKey: ${{ secrets.NSEC }}
+          nostrPrivateKey: ${{ secrets.NSECBECH }}
 
       - name: Publish Package NIP-94 Metadata
         id: publish_package
+        if: steps.upload_package.outputs.success == 'true'
         uses: OpenTollGate/nostr-publish-file-metadata-action/python@main
         with:
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
@@ -152,23 +177,28 @@ jobs:
           mimeType: application/x-opkg
           fileHash: ${{ steps.upload_package.outputs.blossomHash }}
           originalHash: ${{ steps.upload_package.outputs.blossomHash }}
-          content: "TollGate Module Relay OpenWRT package for ${{ matrix.target.model }}"
+          filename: "${{ env.PACKAGE_FILENAME }}"
+          content: "TollGate Module Relay OpenWRT package for ${{ env.MODEL }}. Module:${{ env.MODULE_NAME }}, Version:0.0.1"
           nsec: ${{ secrets.NSEC }}
           size: ${{ steps.upload_package.outputs.size }}
-          architecture: ${{ env.PLATFORM }}
+          architecture: "${{ env.ARCH }}"
+          model: "${{ env.MODEL }}"
+          module: "${{ env.MODULE_NAME }}"
+          version: "0.0.1"
 
       - name: Verify Package NIP-94 Event
         id: verify_package
+        if: steps.publish_package.outputs.eventId != ''
         uses: OpenTollGate/nostr-publish-file-metadata-action/python/verify@main
         with:
           eventId: ${{ steps.publish_package.outputs.eventId }}
           relays: wss://relay.damus.io,wss://nos.lol,wss://nostr.mom/
 
-      - name: Check Package Publication
-        if: steps.verify_package.outcome != 'success'
-        run: |
-          echo "❌ Failed to verify package publication on relays"
-          exit 1
+      # - name: Check Package Publication
+      #   if: steps.verify_package.outcome != 'success'
+      #   run: |
+      #     echo "❌ Failed to verify package publication on relays"
+      #     exit 1
 
       - name: Upload Package Artifact
         uses: actions/upload-artifact@v4
@@ -185,9 +215,14 @@ jobs:
           echo "Binary URL: ${{ steps.upload_binary.outputs.blossomUrl }}"
           echo "Package URL: ${{ steps.upload_package.outputs.blossomUrl }}"
 
+  install-os:
+    needs: build-package
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger OS Workflow
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: OpenTollGate/tollgate-os
           event-type: update-release-json
+
